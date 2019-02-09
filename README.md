@@ -87,5 +87,9 @@ Vous pouvez donc dès à présent modifier le contenu du fichier `App.js` et les
 Pour passer à la deuxième étape de la formation vous pouvez supprimer l'application précédement créer et utiliser à partir de maintenant uniquement ce dossier comme application. Executez ensuite la commande suivante :
 
 ```
+<<<<<<< HEAD
 yarn next-step
+=======
+git checkout step-2
+>>>>>>> First step
 ```
