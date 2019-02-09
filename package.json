@@ -4,7 +4,8 @@
   "description": "ES6 / React formation",
   "author": "d34thwings <d34thwings@gmail.com>",
   "license": "MIT",
+  "private": true,
   "scripts": {
-    "next-step": "git checkout step-1"
+    "next-step": "git checkout step-2"
   }
 }
