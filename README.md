@@ -1,142 +1,160 @@
-# Étape 2
+# Étape 3
 
-Maintenant que vous êtes familier avec l'architecture du projet, il est temps de rentrer dans le vif du sujet : la création de composants. Pour ce faire nous allons voir en premier le code minimal pour une application React et comprendre ce qu'il s'y passe afin de mieux comprendre la manière dont fonctionne les composants React.
+Dans cette étape nous allons apprendre à gérer l'état interne d'un composant et son cycle de vie.
 
-## Hello World !
+## State
 
-Le code minimal pour démarrer une application React est le suivant :
+Le `state` d'un composant est son état interne, c'est une valeur qui n'est pas globale à l'application mais propre à ce
+composant et qui permet de déterminer à un instant T dans quel état il est. Ceci est très utilisé pour stocker des
+interactions utilisateur tel que ouvrir ou fermer un menu mais aussi pour stocker des changements externes tels que des
+timers ou des WebSockets.
 
-```js
-import React from 'react';
-import ReactDOM from 'react-dom';
+Mettre à jour le `state` provoque automatiquement un rafraîchissement du composant et de ses composants enfants. Il en
+va de même pour les `props`, si vous changez celles passées à un composant grâce à une mise à jour du state, celui-ci
+sera aussi forcé d'effectuer un nouveau rendu.
 
-ReactDOM.render(
-  React.createElement('h1', { children: 'HellowWorld!' }),
-  document.querySelector('#root'),
-);
-```
+### Ajouter un state à un composant
 
-Ci-dessus on peut observer un certain nombre de chose mais dans un premier temps nous allons nous attarder particulièrement sur `React.createElement`. En effet cette fonction permet de générer un élément React qui servira de "descriptif" à React pour savoir quoi afficher dans la page. Dans notre exemple on peut voir que l'on souhaite afficher à l'écran une balise `<h1>` avec la contenu `HellowWorld!`.
-
-Cette traduction est effectuée par `ReactDOM` qui s'occupe de traduire les éléméents React en éléments DOM. Il existe à l'heure actuelle une bonne quantité de "traducteurs" qui permettent d'utiliser React sur de nombreuses plateformes, par exemple React Native.
-
-## JSX
-
-Décrire le rendu de la page avec `React.createElement` peut vite être laborieux à lire et écrire, c'est pour quoi, Facebook a décidé d'introduire une nouvelle syntaxe appellée le JSX.
+Seul les composants sous forme de classe ES6 peuvent posséder un state. Celui-ci est stocké dans la propriété `state`
+de la classe comme suis :
 
 ```jsx
-ReactDOM.render(
-  <h1>HelloWorld!</h1>,
-  document.querySelector('#root'),
-);
-```
+class Counter extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: 0
+    };
+  }
 
-Cette syntaxe simple de pouvoir écrire du "HTML" dans votre JavaScript rend React très déclaratif, et permet de créer des comportements très dynamique sans avoir des symbols spécifiques dans votre templatre pour le faire. En effet vous profitez de toute la puissance du JS pour créer le template comme bon vous semble.
-
-L'intérieur des balises JSX représentent ce que l'on appel les `children`. On peut en effet, retourner d'autres éléments React en temps qu'enfant pour créer une arborescence comme en HTML. Pour rendre le contenu dynamique, ils vou suffit d'utiliser la syntaxe suivante :
-
-```jsx
-const someValue = 'foo'
-
-ReactDOM.render(
-  <h1>My variable is: {someValue}</h1>,
-  document.querySelector('#root'),
-);
-```
-
-A l'intérieur des `{}` en JSX vous pouvez utiliser absolument n'importe quelle expression JavaScript qui retourne un résultat. C'est pour cela que pour créer des listes on écrira :
-
-```jsx
-const myList = ['foo', 'bar'];
-
-ReactDOM.render((
-  <ul>
-    {myList.map(value => <li>{value}</li>)}
-  </ul>
-), document.querySelector('#root'));
-```
-
-## Mettre à jour des éléments
-
-Les éléments React sont immutables, cela veut dire qu'ils ne peuvent jamais être modifié, ils sont une image de l'état de lapplication à un instant T. Pour modifier le rendu de la page il vous sera donc nécéssaire de recréer de nouveaux éléments. Par exemple pour une horloge :
-
-```jsx
-function tick() {
-  ReactDOM.render((
-    <div>
-      <h1>Clock</h1>
-      <h2>It is {new Date().toLocaleTimeString()}.</h2>
-    </div>
-  ), document.querySelector('#root'));
-}
-
-setInterval(tick, 1000);
-```
-
-Il ne faut pas se soucier de l'impact potentiel que cela pourrait avoir sur les performances de tout recréer à chaque fois car React s'occupe automatiquement de détecter les changements et n'applique uniquement au DOM les éléments modifiés.
-
-## Les composants
-
-Lorsque votre application grossie et que vous rajoutez de plus en plus de fonctions, vous allez vite vous rendre compte que tout mettre dans un seul fichier avec `ReactDOM.render` n'est pas possible. C'est pour pouvoir découper le code et le réutiliser que les composants existent. Ils se présentent sous cette forme :
-
-```jsx
-class MyComp extends React.Component {
   render() {
-    const { title, content } = this.props;
+    const { value } = this.state;
+    return <div>Counter value: {value}</div>;
+  }
+}
+```
+
+Il existe une autre syntaxe plus rapide pour les propriétés de classe :
+
+```jsx
+class Counter extends React.Component {
+  state = {
+    value: 0
+  };
+
+  render() {
+    const { value } = this.state;
+    return <div>Counter value: {value}</div>;
+  }
+}
+```
+
+_Remarque : Le state ne doit jamais être initialisé avec une props, car comme les props sont changeantes, il n'est pas
+garanti que le state sois toujours initialisé avec la valeur que l'on souhaite._
+
+### Modifier le state d'un composant
+
+Le fait d'étendre `React.Component` nous donne accès à certaines API supplémentaire de React face aux composants sous
+forme de fonctions. En effet la méthode `this.setState()` est celle qui permet de changer l'état d'un composant et de
+déclencher un nouveau rendu.
+
+La fonction `setState` prend en paramètre un objet contenant la mise à jour que vous souhaitez effectuer et qui sera
+fusionné avec le state existant. Cela permet d'effectuer des mise à jour partiel du state si vous ne souhaitez pas
+changer toutes les valeur qu'il contient.
+
+### Réagir aux événement utilisateur
+
+Les éléments DOM possèdent des attributs permettant d'écouter les interactions de l'utilisateur tel que `onclick`,
+`onblur`, etc. De la même manière en JSX ces attributs existent mais sont écrits en camelCase. Par exemple `onclick`
+devient `onClick`.
+
+On pourra donc effectuer une mise à jour du state au clique d'un bouton :
+
+```jsx
+class Counter extends React.Component {
+  state = {
+    value: 0
+  };
+
+  handleClick = () => this.setState({ value: this.state.value + 1 });
+
+  render() {
+    const { value } = this.state;
     return (
-      <article>
-        <h2>{title}</h2>
-        <div className="article-content">
-          {content}
-        </div>
-      </article>
+      <div>
+        Counter value: {value}
+        <br />
+        <button onClick={this.handleClick}>Increment</buutton>
+      </div>
     );
   }
-};
+}
 ```
 
-Vous avez déjà dû aprercevoir cela dans le fichier `App.js`, les composants sont des classes ou des fonctions qui possèdent une méthode de rendu qui prends en paramètre des `props` et qui retourne des React elements.
+_Note : la syntaxe `handleClick = () => ...` est aussi une propriété de classe, mais avec la particularité de bind
+l'instance de la classe à la fonction. Cela revient à écrire dans le constructeur
+`this.handleClick = this.handleClick.bind(this);`. Cela permet de s'assurer que la méthode `handleClick` est toujours
+bien appelé avec le bon `this`._
 
-Si votre composant n'est constitué que d'une fonction de rendu, vous pouvez l'écrire sous la forme ci-dessous :
+Les listeners reçoivent en argument un événement synthétique React qui englobe l'événement DOM original. Toutes les
+propriétés de l'événement original sont conservées.
+
+## Cycle de vie
+
+Les composants React possèdent plusieurs événement internes au cours de leur utilisation dans l'application. Nous
+allons nous concentrer sur 2 particulièrement qui sont `componentDidMount` et `componentWillUnmount` qui permettent
+respectivement d'effectuer des opération quand le composant React est monté dans le DOM et juste avant qu'il soit
+nettoyé du DOM quand celui-ci est détruit.
+
+`componentDidMount` est très souvent utilisé pour aller chercher des données avec des appels XHR ou mettre en place
+des timers. Comme il est appelé au moment où le composant apparaît dans le DOM, on s'assure qu'on n'execute pas des
+actions pour rien car on sait que le composant va être affiché.
+
+`componentWillUnmount` sert quand à lui à faire le nettoyage. Vous pouvez par exemple supprimer les timers créer
+dans le `componentDidMount`. Enlever des listeners sur `window`, etc. Ceci est important car provoquer un `setState`
+sur un composant qui est détruit aura pour conséquence de faire crasher votre application. En plus de cela, le fait
+de ne pas nettoyer vos listeners/timers peut créer des fuites mémoires importantes.
+
+### Utilisation
+
+De la même manière que pour le state, les méthodes de cycle de vie ne sont disponible que dans les classes ES6 :
 
 ```jsx
-const MyComp = ({ title, content }) => (
-  <article>
-    <h2>{title}</h2>
-    <div className="article-content">
-      {content}
-    </div>
-  </article>
-);
+class Counter extends React.Component {
+  state = {
+    value: 0
+  };
+
+  componentDidMount() {
+    this.timer = setInterval(() => this.setState({ value: this.state.value + 1 }), 1000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+
+  render() {
+    const { value } = this.state;
+    return <div>Counter value: {value}</div>;
+  }
+}
 ```
 
-Pour afficher un composant React, rien de plus simple par rapport aux éléments DOM classique :
+## Exercice
 
-```jsx
-ReactDOM.render(
-  <MyComp title="Test" content="I'm an awesome article" />,
-  document.querySelector('#root'),
-);
-```
+Maintenant que vous êtes en mesure de gérer des interactions en React, nous allons ajouter à notre Choixpeau la
+possibilité d'ajouter des étudiants aux différentes maisons. Pour ce faire, il va falloir ajouter un petit formulaire
+en haut de la page permettant de saisir le nom et prénom d'un étudiant, puis un bouton permettant de valider.
+L'étudiant sera ensuite assigné de manière aléatoire à l'une des 3 maisons.
 
-Tous les attributs JSX donnés au composant seront passés en un seul objet `props` à cleui-ci. Cet objet est lui aussi immutable, les props ne peuvent en aucun cas être modifiées par le composants à qui elles sont données.
+Vous pouvez écouter l'événement `onChange` sur les éléments de type `input` pour stocker leur valeur dans le state.
+La valeur d'un input peut être trouvé dans `event.target.value`.
 
-Les composants peuvent être imbriqués les uns dans les autres exactement de la même manière que les éléments DOM.
+Pour la soumission du formulaire, écoutez l'événement `onSubmit` de l'élément `form`. N'oubliez pas d'annuler le
+comportement de base via `event.preventDefault()`.
 
-## Mise en pratique
-
-Maintenant que vous possédez toutes les informations pour créer votre premier composant, nous allons donc en ajouter un à notre application. Le but de cet exercice est de créer la barre de navigation pour notre application. Nous y feront simplement figurer le nom de l'application pour le moment.
-
-Pour ce faire, commencez par créer un nouveau fichier dans le dossier `src` qui contiendra votre composant. Une fois votre composant terminé, ajoutez-le dans le rendu du composant `App`.
-
-Ajoutez ensuite un peu de CSS pour arriver au rendu que vous souhaitez. Créez-donc un fichier CSS que vous importerez dans votre composant.
-
-_Astuce : Les éléments DOM possèdent un attribut spécial `className` qui permettent de configurer la classe CSS d'un élément (`class` étant un mot clé JavaScript réservé)._
-
-## Étape suivante
-
-Maintenant que vous êtes en mesure de créer des composants React, nous allons apprendre à gérer leur cycle de vie et leurs états internes. Rendez-vous à l'étape suivante avec la commande :
-
-```
-yarn next-step
-```
+Ajoutez un state au composant `App` contenant la liste des étudiants courante initialisée avec les données contenues
+dans le JSON `./src/data/students.json` que vous passerez en prop à `HousesList`. Ensuite créez un composant
+`StudentForm` qui contiendra le formulaire ainsi qu'un state contenant les valeurs des 2 champs textes. Passez en prop
+de `StudentForm` une fonction de callback pour gérer la soumission du formulaire qui modifiera le state de `App`
+avec le nouvel étudiant en paramètre.

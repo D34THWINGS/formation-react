@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "name": "Gryffindor",
+    "picture": "gryffindor"
+  },
+  {
+    "id": 2,
+    "name": "Slytherin",
+    "picture": "slytherin"
+  },
+  {
+    "id": 3,
+    "name": "Hufflepuff",
+    "picture": "hufflepuff"
+  }
+]

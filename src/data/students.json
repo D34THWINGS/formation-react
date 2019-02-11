@@ -1,0 +1,50 @@
+[
+  {
+    "id": 1,
+    "firstName": "Harry",
+    "lastName": "Potter",
+    "house": 1
+  },
+  {
+    "id": 2,
+    "firstName": "Ron",
+    "lastName": "Weasley",
+    "house": 1
+  },
+  {
+    "id": 3,
+    "firstName": "Hermione",
+    "lastName": "Granger",
+    "house": 1
+  },
+  {
+    "id": 4,
+    "firstName": "Draco",
+    "lastName": "Malfoy",
+    "house": 2
+  },
+  {
+    "id": 5,
+    "firstName": "Gregory",
+    "lastName": "Goyle",
+    "house": 2
+  },
+  {
+    "id": 6,
+    "firstName": "Vincent",
+    "lastName": "Crabbe",
+    "house": 2
+  },
+  {
+    "id": 7,
+    "firstName": "Cedric",
+    "lastName": "Digory",
+    "house": 3
+  },
+  {
+    "id": 8,
+    "firstName": "Newton",
+    "lastName": "Scamander",
+    "house": 3
+  }
+]
