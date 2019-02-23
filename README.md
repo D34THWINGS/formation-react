@@ -3,8 +3,7 @@
 [![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 Bienvenue dans la formation JavaScript / React. Cette formation en 2 jours a pour but de vous apprendre à construire une
-application React from scratch. Cette application sera résiliente et durable car basée sur les bonnes pratiques. Les
-étapes de la formation seront donc :
+application React from scratch via Create-React-App. Les étapes de cette formation seront les suivantes :
 
 - Créer le squelette de l'application à l'aide de `create-react-app` et comprendre sa configuration.
 - Création de composants, stateless et stateful dans le but de produire une interface utilisateur interactive.
@@ -12,12 +11,18 @@ application React from scratch. Cette application sera résiliente et durable ca
 - Utilisation du contexte pour configurer l'application de manière globale.
 - Design CSS de l'interface avec styled-components et theming.
 - Découverte des hooks pour remplacer les composants stateful.
+- Récupérer les données d'une API.
+
+Lors de cette formation nous accompagneront Poudlard dans sa transformation digitale. En effet suite à une croissance
+constante du nombre d'élève, le Choixpeau ne vas plus assez vite et par conséquent devra être remplacé par une app web.
+Nous allons donc concevoir une application capable de lister les élèves dans différentes maison et de modifier ce
+listes.
 
 ## Mode d'emploi
 
-Votre application sera construite au fur et à mesure tout au long de la formation. A chaque étape vous sera proposé un
+Votre application sera construite au fur et à mesure tout au long de la formation. À chaque étape vous sera proposé un
 point de sauvegarde si jamais vous n'avez pas eu le temps de finir ou si vous n'arrivez pas à retrouver un état
-d'application stable. Ces points de sauvegrade se présenteront sous la forme de branches Git que vous pourrez atteindre
+d'application stable. Ces points de sauvegarde se présenteront sous la forme de branches Git que vous pourrez atteindre
 via la commande `git checkout [branch]`.
 
 La liste des branches se trouvera en permanence à la fin du README. Les instructions pour chaque étapes seront aussi
@@ -27,7 +32,8 @@ La commande `yarn next-step` vus permettra depuis n'importe quelle étape de pas
 
 ### Prérequis
 
-Avant de commencer, assurez vous de posséder localement une version de Node supérieure ou égale à 10. Vous pouvez l'installer via `brew` avec la commande suivante :
+Avant de commencer, assurez vous de posséder localement une version de Node supérieure ou égale à 10. Vous pouvez
+l'installer via `brew` avec la commande suivante :
 
 ```bash
 brew install node
