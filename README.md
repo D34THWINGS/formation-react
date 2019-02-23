@@ -44,7 +44,7 @@ Vous devrez aussi être familier avec l'utilisation des `node_modules` via `yarn
 Pour démarrer la première étape de la formation, lancer la commande suivante :
 
 ```
-git checkout step-1
+yarn next-step
 ```
 
 ## Licence
