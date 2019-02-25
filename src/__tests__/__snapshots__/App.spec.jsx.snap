@@ -1,0 +1,24 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`App should render application 1`] = `
+<div
+  className="App"
+>
+  <Menu />
+  <StudentForm
+    onAddStudent={[Function]}
+  />
+  <HousesList
+    students={
+      Array [
+        Object {
+          "firstName": "foo",
+          "house": 2,
+          "id": 1,
+          "lastName": "bar",
+        },
+      ]
+    }
+  />
+</div>
+`;

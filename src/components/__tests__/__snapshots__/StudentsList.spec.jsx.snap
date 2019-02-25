@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`StudentsList should render a list of students 1`] = `
+<ul
+  className="studentsList"
+>
+  <li
+    key="1"
+  >
+    BAR
+     
+    foo
+  </li>
+</ul>
+`;

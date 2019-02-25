@@ -2,16 +2,19 @@
   {
     "id": 1,
     "name": "Gryffindor",
-    "picture": "gryffindor"
+    "picture": "gryffindor",
+    "color": "#a91414"
   },
   {
     "id": 2,
     "name": "Slytherin",
-    "picture": "slytherin"
+    "picture": "slytherin",
+    "color": "#14a914"
   },
   {
     "id": 3,
     "name": "Hufflepuff",
-    "picture": "hufflepuff"
+    "picture": "hufflepuff",
+    "color": "#1414a9"
   }
 ]
