@@ -1,0 +1,94 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`StudentForm should handle form submit 1`] = `
+<form
+  className="studentForm"
+  onSubmit={[Function]}
+>
+  <h2
+    className="studentForm__title"
+  >
+    Nouvel étudiant
+  </h2>
+  <input
+    name="firstName"
+    onChange={[Function]}
+    type="text"
+    value=""
+  />
+  <input
+    name="lastName"
+    onChange={[Function]}
+    type="text"
+    value=""
+  />
+  <button
+    className="studentForm__button"
+    type="submit"
+  >
+    Ajouter
+  </button>
+</form>
+`;
+
+exports[`StudentForm should handle input change 1`] = `
+<form
+  className="studentForm"
+  onSubmit={[Function]}
+>
+  <h2
+    className="studentForm__title"
+  >
+    Nouvel étudiant
+  </h2>
+  <input
+    name="firstName"
+    onChange={[Function]}
+    type="text"
+    value="azerty"
+  />
+  <input
+    name="lastName"
+    onChange={[Function]}
+    type="text"
+    value=""
+  />
+  <button
+    className="studentForm__button"
+    type="submit"
+  >
+    Ajouter
+  </button>
+</form>
+`;
+
+exports[`StudentForm should render student form 1`] = `
+<form
+  className="studentForm"
+  onSubmit={[Function]}
+>
+  <h2
+    className="studentForm__title"
+  >
+    Nouvel étudiant
+  </h2>
+  <input
+    name="firstName"
+    onChange={[Function]}
+    type="text"
+    value=""
+  />
+  <input
+    name="lastName"
+    onChange={[Function]}
+    type="text"
+    value=""
+  />
+  <button
+    className="studentForm__button"
+    type="submit"
+  >
+    Ajouter
+  </button>
+</form>
+`;

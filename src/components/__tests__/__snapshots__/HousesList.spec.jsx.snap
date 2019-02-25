@@ -1,0 +1,71 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`HousesList should render a list of houses 1`] = `
+<div
+  className="housesList"
+>
+  <div
+    className="housesList__house"
+    key="1"
+  >
+    <img
+      alt="Gryffindor"
+      className="house__picture"
+      src="gryffindor.png"
+    />
+    <p
+      className="house__name"
+    >
+      Gryffindor
+    </p>
+    <StudentsList
+      students={Array []}
+    />
+  </div>
+  <div
+    className="housesList__house"
+    key="2"
+  >
+    <img
+      alt="Slytherin"
+      className="house__picture"
+      src="slytherin.png"
+    />
+    <p
+      className="house__name"
+    >
+      Slytherin
+    </p>
+    <StudentsList
+      students={
+        Array [
+          Object {
+            "firstName": "foo",
+            "house": 2,
+            "id": 1,
+            "lastName": "bar",
+          },
+        ]
+      }
+    />
+  </div>
+  <div
+    className="housesList__house"
+    key="3"
+  >
+    <img
+      alt="Hufflepuff"
+      className="house__picture"
+      src="hufflepuff.png"
+    />
+    <p
+      className="house__name"
+    >
+      Hufflepuff
+    </p>
+    <StudentsList
+      students={Array []}
+    />
+  </div>
+</div>
+`;

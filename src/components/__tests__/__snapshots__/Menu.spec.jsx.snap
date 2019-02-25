@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Menu should render app menu 1`] = `
+<header
+  className="menu"
+>
+  <h1
+    className="menu__title"
+  >
+    Choixpeau
+  </h1>
+</header>
+`;
