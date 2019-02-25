@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 import './HousesList.css';
 import houses from '../data/houses';
@@ -10,7 +11,7 @@ import hufflepuff from '../images/hufflepuff.png';
 
 const images = { gryffindor, slytherin, hufflepuff };
 
-const PokemonList = ({ students }) => (
+const HousesList = ({ students }) => (
   <div className="housesList">
     {houses.map(house => (
       <div className="housesList__house" key={house.id}>
@@ -22,4 +23,10 @@ const PokemonList = ({ students }) => (
   </div>
 );
 
-export default PokemonList;
+HousesList.propTypes = {
+  students: PropTypes.arrayOf(PropTypes.shape({
+    house: PropTypes.number.isRequired,
+  })).isRequired,
+};
+
+export default HousesList;

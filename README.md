@@ -1,185 +1,230 @@
-# Étape 4
+# Étape 5
 
-Maintenant que notre application commence à grossir, il est temps de mettre en place des choses permettant de
-garantir sa stabilité et sa maintenabilité.
+Les applications frontend étant très dynamique et de plus en plus complexe en terme d'interface, il est venu la
+nécessité de rendre les classes CSS dynamiques plutôt que d'en créer une quantité astronomique que l'on doit
+composer entres elles.
 
-## ESLint
+C'est de cette idée qu'est né le concept du "CSS in JS". Le principe est de profiter encore une fois de toute la
+puissance du JavaScript pour générer du CSS très complexe. Dans le cadre de cette formation nous feront le choix de la
+librairie Emotion (car très performante), mais il en existes d'autres très répendues tel que
+[Styled-Components](https://www.styled-components.com/).
 
-ESLint est un linter (outil permettant de vérifier la syntaxe du code). Celui-ci est intégré de base à
-`create-react-app` via un plugin Webpack qui affiche les erreurs directement dans votre navigateur. Cependant sa
-configuration est extrêmement laxiste. C'est pourquoi nous allons à la place utiliser la configuration d'AirBnB.
+La puissance du CSS in JS en React va encore plus loin que tu simple CSS dynamique. En effet il va nous permettre
+d'adapter le CSS de nos composant en fonction de leurs props. Par exemple avec une propriété `size` sur notre composant
+on pourra contrôler de multiples propriétés CSS en même temps tel que `padding`, `margin`, `width`, `heigt`, etc.
 
-Pour ce faire, nous allons devoir installer le package suivant :
-
-```bash
-yarn add -D eslint-config-airbnb
-```
-
-Vous allez pouvoir ensuite créer un fichier de configuration ESLint à la racine du projet appelé `.eslintrc`, qui
-contiendra le nom de la configuration à étendre, ainsi que différentes surcharges de règles si vous le souhaitez.
-Nous partiront sur la configuration suivante :
-
-```json
-{
-  "extends": ["airbnb"],
-  "rules": {
-    "max-len": ["error", 120]
-  }
-}
-```
-
-_Note : La configuration de base est assez restrictive en terme de longueur de ligne, c'est pourquoi nous l'étendont à
-120 caractères._
-
-Nous avons besoin ensuite d'un fichier permettant d'ignorer des fichiers du linter qui se situera aussi à la racine
-du projet et nommé `.eslintignore` :
+Pour commencer à utiliser Emotion, installer le via la commande :
 
 ```
-node_modules/
-build/
+yarn add --save @emotion/core @emotion/styled
 ```
 
-Vous pouvez ensuite configurer votre IDE pour utiliser ESLint. Sur VSCode il existe une extension, sur WebStorm il est
-intégré de base.
+Il est ensuite possible d'utiliser Emotion de 2 manières différentes :
 
-Nous allons ensuite ajouter un script Yarn via notre `package.json` pour simplifier l'utilisation du linter. Cette
-commande pourra être executée sur votre CI, ou dans vos hook Git pre-push/pre-commit.
+- Via une prop `css` sur les composants React (nécessite cependant de rajouter des lignes de configuration Babel dans
+vos fichiers).
+- Via des composants stylisés, plus simple à utiliser mais potentiellement plus difficile à utiliser dans des cas très
+dynamiques.
 
-```json
-{
-  "lint": "eslint '**/*.{js,jsx}'"
-}
-```
+Nous ne verrons que la deuxième méthode dans cette formation.
 
-## Jest
+## Styled components
 
-Jest un outil de test qui nous servira à écrire des tests unitaires pour notre application. Celui-ci fonction par
-système de suites de tests contenus dans des fichiers `*.spec.{js,jsx}` ou `*.test.{js,jsx}`. Je vous recommande de
-faire un fichier de test par composant dans un dossier `__tests__/` immédiatement adjacent à votre composant et de le
-faire terminer par `.spec.jsx`. Par exemple pour le composant `App` cela donnera la structure suivante :
-
-```
-src
- |- App.js
- |- __tests__
- |  |- App.spec.js
-```
-
-Ces suites de test utilisent une API similaire à celle de Mocha et Jasmine. Vous écrirez donc vos tests à l'aide des
-méthodes `describe`, `it` et `expect`, ce qui donnera l'exemple suivant :
-
-```js
-import App from '../App.js';
-
-describe('App', () => {
-  it('should exist', () => {
-    expect(App).toBeDefined();
-  });
-});
-```
-
-Les tests peuvent être lancés via la commande `yarn test`.
-
-Pour tester de manière simple le rendu d'un composant React, AirBnB a développé un package appelé `enzyme` qui permet
-de rapidement accéder à n'importe quel élément du rendu. Nous allons donc commencer par installer Enzyme via :
-
-```bash
-yarn add -D enzyme enzyme-adapter-react-16
-```
-
-Il faudra ensuite créer un fichier pour configurer Enzyme afin de lui dire quel adapter utiliser pour faire le rendu
-React. Ce fichier sera lancé par Jest avant chaque suite de test. Le chemin pour le fichier sera
-`./src/jestSetup.js`, il contiendra le code suivant :
-
-```
-import Enzyme from 'enzyme';
-import Adapter from 'enzyme-adapter-react-16';
-
-Enzyme.configure({ adapter: new Adapter() });
-```
-
-Pour configurer Jest pour utiliser ce fichier, ajoutez les lignes suivantes à la fin de votre `package.json` :
-
-```
-"jest": {
-  "setupTestFrameworkScriptFile": "<rootDir>/tests/jestSetup.js",
-}
-```
-
-Vous êtes maintenant prêt à écrire votre premier test de rendu React.
-
-## Enzyme
-
-Les tests de rendu React peuvent se présenter sous 2 formes, les `shallow` et les `mount`. Le premier permet de rendre
-uniquement le composant passé en paramètre alors que le second permet de rendre aussi l'intérieur des composants
-enfant. On utilisera donc plus facilement `shallow` pour des tests unitaires et `mount` pour des tests d'intégration.
-
-Lorsque l'on utilise une de ces 2 méthodes, Enzyme nous renvoie un wrapper autour du composant React qui possède toute
-une API similaire à JQuery pour trouver des éléments et vérifier qu'ils possèdent certaines propriétés. Par exemple,
-la méthode `find` nous permettra de chercher parmi tous les composants enfants. On pourra donc tester que le
-composant `HouseList` rend bien une `div` par maison de la manière suivante :
+Emotion permet de créer des composants React avec des styles qui lui sont attachés. Cela se présente sous la forme
+d'une template string taggée :
 
 ```jsx harmony
 import React from 'react';
-import { shallow } from 'enzyme';
-import HousesList from '../HousesList';
+import styled from '@emotion/styled'
 
-describe('HousesList', () => {
-  it('should render a div per house', () => {
-    const wrapper = shallow(<HousesList students={[]} />);
-    expect(wrapper.find('div.housesList__house').length).toEqual(3);
-  });
-});
+const Button = styled.button`
+  color: turquoise;
+`;
+
+const MyComponent = () => (
+  <Button>
+    Button content
+  </Button>
+)
+
+export default MyComponent;
 ```
 
-La limitation de ce type de test se ressent assez rapidement lorsque l'on a un grand nombre de props et de sous
-composant à vérifier, c'est pourquoi Jest possède la capacité de faire des tests de Snapshot.
+Le CSS que vous écrivez est strictement scopé à ce composants. Si vous souhaitez appliquer des styles à des éléments
+génériques tel que `div` ou `a`, vous devrez utiliser des styles globaux que nous verrons après.
 
-## Snapshots
+Ces composants sont réutilisables à l'infini et son particulièrement pratiques pour construire des blocks de
+constructions pour votre interface que vous aurez juste à placer dans votre JSX.
 
-Les tests snapshots sont des tests qui consiste à écrire le résultat d'un test dans un fichier et de comparer les
-prochaines executions du même test avec ce fichier. En cas de différence, le test échouera. Ce la est très utile
-lorsque couplé à Enzyme, car celui-ci offre la possibilité de faire un rendu spécial snapshot qui permet de voir
-instantanément sous forme de pseudo HTML le rendu React. Mais tout autre objet JavaScript pouvant être transformé
-en JSON peut fonctionner. La méthode pour effectuer des tests snapshot est `expect(value).toMatchSnapshot()`.
-
-Pour rendre les tests snapshots avec Enzyme possible il faut tout d'abord installer `enzyme-to-json` en tant que
-`devDependencies` et ensuite changer la configuration de Jest pour utiliser son serializer de snapshot :
-
-```json
-{
-  "jest": {
-    "snapshotSerializers": [
-      "enzyme-to-json/serializer"
-    ]
-  }
-}
-```
-
-On pourra donc ensuite changer notre test pour `HousesList` par :
+Pour rendre un composant Emotion dynamique, il suffit d'utiliser l'interpolation dans la template string de son CSS et 
+d'y passer une fonction. Celle-ci recevra en paramètre les propriété du composant :
 
 ```jsx harmony
-import React from 'react';
-import { shallow } from 'enzyme';
-import HousesList from '../HousesList';
+const Button = styled.button`
+  color: ${props => props.color};
+`;
 
-describe('HousesList', () => {
-  it('should render a div per house', () => {
-    const wrapper = shallow(<HousesList students={[]} />);
-    expect(wrapper).toMatchSnapshot();
-  });
-});
+render(<Button color="red">My button</Button>)
 ```
 
-Il est aussi possible de tester des interactions avec Enzyme via la fonction `trigger`. Par exemple, pour tester le
-submit d'un formulaire on écrira :
+Le caractère `&` dans la template string permet de référencer le composant lui-même, ainsi on pourra modifier les
+styles avec différents modificateurs tels que `:hover`, `:focus`, etc, comme suis :
 
 ```js
-wrapper.find('form').trigger('submit', eventMock);
+const Button = styled.button`
+  color: ${props => props.color};
+  &:hover {
+    opacity: 0.8;
+  } 
+`;
 ```
+
+Mais aussi pour appliquer des style à ce composant lorsqu'il est contenu dans d'autres composants spécifiques, tel que :
+
+```js
+const Button = styled.button`
+  color: ${props => props.color};
+  a & {
+    cursor: pointer;
+  } 
+`;
+```
+
+N'hésitez pas à consulter la [documentation](https://emotion.sh/docs/styled) pour plus d'informations.
+
+## Styles globaux
+
+Il peut parfois être intéressant d'injecter du CSS dit "global" pour pouvoir appliquer des styles à n'importe quel type
+d'élément sans aucune restriction. Pour ce faire, il existe un composant spécifique appelé `Global` dans
+`@emotion/core`. Celui-ci possède une prop nommée `styles` qui va contenir le CSS à appliquer globalement. Les styles
+devront être générés avec la fonction de tag `css`. Par exemple :
+
+```jsx harmony
+const styles = css`
+  body {
+    background-color: red;
+  }
+`;
+
+const MyComponent = () => (
+  <Global styles={styles} />
+);
+```
+
+Retenez tout de même que ce genre d'utilisation doit rester marginal, principalement pour déclarer vos `@font-face` et
+appliquer des styles au `body` mais rien de plus.
+
+## Themes
+
+Lorsque vous développez une application de large envergure, il est préférable de conserver le thème (couleurs,
+espacements, polices, tailles, etc) à une seul endroit pour s'assurer de son homogénéité. Pour ce faire, Emotion
+possède un mécanisme utilisant le contexte de React pour transmettre de manière implicite le thème à tous les
+composants de l'application.
+
+### Contexte React
+
+Comme énoncé plus haut, React possède un moyen de passer des données de manière implicite à tous les composants via
+ce que l'on appelle le contexte. Depuis React 16, le contexte est accessible via une paire de composants : un
+Provider et un Consumer, créés à partir de la fonction `React.createContext()`.
+
+```js
+import React from 'react';
+
+const initialContextValue = 'foo';
+const { Consumer, Provider } = React.createContext(initialContextValue);
+```
+
+Le Provider ne comporte qu'un seule prop `value` qui sera la valeur injectée dans le contexte.
+Toute modification apportée à cette propre aura pour effet de trigger le re-render de tous les Consumers qui lui sont
+rattachés. Le provider doit être impérativement situé en amont de ses Consumers dans l'arborescence des composants
+React. Il est donc recommandé de les placer dans votre composant racine.
+
+```jsx harmony
+const App = () => (
+  <MyProvider value="foo">
+    <RestOfTheApp />
+  </MyProvider>
+)
+```
+
+Le Consumer quand à lui ne possède aucune prop, mais prend en tant qu'enfant une fonction (aussi appelé render prop) :
+
+```jsx harmony
+const MyComponent = () => (
+  <MyConsumer>
+    {contexteValue => (
+      <AnotherComponent>{contexteValue}</AnotherComponent>
+    )}
+  </MyConsumer>
+)
+```
+
+Cette fonction recevra en paramètre la valeur injectée par le provider (soit la prop `value`).
+
+### ThemeProvider
+
+Emotion possède un Provider pour le thème nommé `ThemeProvider` qui prend une seule prop nommée `theme`. Il
+sera passé à tous les styled components et pourra être récupéré via la prop theme dans les fonctions d'interpolation
+comme suis :
+
+```js
+const MyButton = styled.button`
+  color: ${({ theme }) => theme.palette.primary.main};
+`;
+```
+
+Vous pouvez aussi utiliser le HOC (Higher Order Component) `withTheme` pour que votre composant reçoive le thème en
+propriété :
+
+```js
+const MyComponent = ({ theme }) => (
+  <div>Primary color is: {theme.palette.primary.main}</div>
+)
+
+export default withTheme(MyComponent);
+```
+
+Votre theme peut contenir absolument ce que vous voulez, il n'y a aucun format particulier à respecter.
 
 ## Exercice
 
-Maintenant que vous êtes en mesure de tester et maintenir correctement votre application, écrivez les tests pour
-couvrir 100% de votre application. Vous pouvez vérifier le taux de couverture via `yarn test --coverage`. Assurez vous
-aussi que votre app ne contienne aucune erreur de lint via la commande `yarn lint`.
+Il est temps maintenant de remplacer le CSS dans notre application par Emotion. Créer des styled components pour chaque
+classe CSS.
+
+Dans un deuxième temps, implémentez un thème qui contiendra les informations suivantes :
+
+```js
+const theme = {
+  typography: {
+    default : {
+      fontSize: '16px',
+      fontWeight: 'normal',
+      fontFamily: '\'Roboto\', Helvetica, Arial, sans-serif',
+    },
+    variants: {
+      menu: { fontSize: '32px', fontWeight: 'bold' },
+      title: { fontSize: '24px', fontWeight: 'bold' },
+    }
+  },
+  palette: {
+    background: '#333'
+  }
+}
+```
+
+Remplacer toutes les utilisations de la couleur `#333` par `theme.palette.background` et enfin créez un styled component
+basé sur un `span` nommé `Typography`. Celui-ci devra appliquer les styles par défaut de font depuis le thème ou
+utiliser la variante si elle est spécifiée avec la prop `variant`. Entourez ensuite tous les textes de l'application
+dans ce composant pour leur appliquer les styles de texte souhaités.
+
+Votre composant devra gérer les trois cas suivants :
+
+```jsx harmony
+render([
+  <Typography>Default font styles</Typography>, // fontSize: 16px, fontWeight: 'normal', fontFamily: ...
+  <Typography variant="title">Default + title font styles</Typography>, // fontSize: 24px, fontWeight: 'bold', fontFamily: ...
+  <Typography variant="menu">Default + menu font styles</Typography>, // fontSize: 32px, fontWeight: 'bold', fontFamily: ...
+])
+```
+
+:warning: N'oubliez pas de mettre à jour vos tests et de vérifier le linter.

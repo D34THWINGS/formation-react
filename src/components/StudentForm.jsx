@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 import './StudentForm.css';
 
@@ -13,7 +14,8 @@ class StudentForm extends Component {
   handleSubmit = (e) => {
     e.preventDefault();
     const { firstName, lastName } = this.state;
-    this.props.onAddStudent({ firstName, lastName });
+    const { onAddStudent } = this.props;
+    onAddStudent({ firstName, lastName });
     this.setState({ firstName: '', lastName: '' });
   };
 
@@ -29,5 +31,9 @@ class StudentForm extends Component {
     );
   }
 }
+
+StudentForm.propTypes = {
+  onAddStudent: PropTypes.func.isRequired,
+};
 
 export default StudentForm;

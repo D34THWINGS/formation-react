@@ -10,7 +10,7 @@ class App extends Component {
     students: studentsData,
   };
 
-  handleAddStudent = student => {
+  handleAddStudent = (student) => {
     const { students } = this.state;
     return this.setState({
       students: [...students, {
