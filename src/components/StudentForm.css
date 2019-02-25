@@ -1,0 +1,29 @@
+.studentForm {
+  background: #333;
+  margin-bottom: 2rem;
+  padding: 0.5rem;
+  border-radius: 5px;
+}
+
+.studentForm__title {
+  color: #fff;
+  margin: 0 0 1rem 0;
+}
+
+.studentForm input {
+  display: inline-block;
+  border: none;
+  background: #fff;
+  margin-right: 0.5rem;
+  padding: 0.5rem;
+  font-size: 1.3rem;
+}
+
+.studentForm__button {
+  background: #fff;
+  padding: 0.5rem;
+  border: none;
+  font-size: 1.3rem;
+  font-weight: bold;
+  cursor: pointer;
+}

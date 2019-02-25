@@ -1,160 +1,207 @@
-# Étape 3
+# Étape 4
 
-Dans cette étape nous allons apprendre à gérer l'état interne d'un composant et son cycle de vie.
+Maintenant que notre application commence à grossir, il est temps de mettre en place des choses permettant de
+garantir sa stabilité et sa maintenabilité.
 
-## State
+## ESLint
 
-Le `state` d'un composant est son état interne, c'est une valeur qui n'est pas globale à l'application mais propre à ce
-composant et qui permet de déterminer à un instant T dans quel état il est. Ceci est très utilisé pour stocker des
-interactions utilisateur tel que ouvrir ou fermer un menu mais aussi pour stocker des changements externes tels que des
-timers ou des WebSockets.
+ESLint est un linter (outil permettant de vérifier la syntaxe du code). Celui-ci est intégré de base à
+`create-react-app` via un plugin Webpack qui affiche les erreurs directement dans votre navigateur. Cependant sa
+configuration est extrêmement laxiste. C'est pourquoi nous allons à la place utiliser la
+[configuration d'AirBnB](https://github.com/airbnb/javascript).
 
-Mettre à jour le `state` provoque automatiquement un rafraîchissement du composant et de ses composants enfants. Il en
-va de même pour les `props`, si vous changez celles passées à un composant grâce à une mise à jour du state, celui-ci
-sera aussi forcé d'effectuer un nouveau rendu.
+Pour ce faire, nous allons devoir installer le package suivant :
 
-### Ajouter un state à un composant
+```bash
+yarn add -D eslint-config-airbnb
+```
 
-Seul les composants sous forme de classe ES6 peuvent posséder un state. Celui-ci est stocké dans la propriété `state`
-de la classe comme suis :
+Vous allez pouvoir ensuite changer la configuration ESLint dans votre `package.json`, qui
+contiendra le nom de la configuration à étendre, ainsi que différentes surcharges de règles si vous le souhaitez.
+Nous partirons sur la configuration suivante :
 
-```jsx
-class Counter extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      value: 0
-    };
-  }
-
-  render() {
-    const { value } = this.state;
-    return <div>Counter value: {value}</div>;
+```json
+{
+  "eslintConfig": {
+    "parser": "babel-eslint",
+    "extends": "airbnb",
+    "env": {
+      "browser": true,
+      "node": true,
+      "jest": true
+    }
   }
 }
 ```
 
-Il existe une autre syntaxe plus rapide pour les propriétés de classe :
+Vous pouvez ensuite configurer votre IDE pour utiliser ESLint. Sur VSCode il existe une extension, sur WebStorm il est
+intégré de base. Si jamais l'intégration ESLint ne fonctionne pas dans votre IDE, déplacer la configuration ESLint dans
+un fichier `.eslintrc` à la racine de votre projet.
 
-```jsx
-class Counter extends React.Component {
-  state = {
-    value: 0
-  };
+Nous allons ensuite ajouter un script Yarn via notre `package.json` pour simplifier l'utilisation du linter. Cette
+commande pourra être executée sur votre CI, ou dans vos hook Git pre-push/pre-commit.
 
-  render() {
-    const { value } = this.state;
-    return <div>Counter value: {value}</div>;
+```json
+{
+  "lint": "eslint '**/*.{js,jsx}'"
+}
+```
+
+## Jest
+
+Jest un outil de test qui nous servira à écrire des tests unitaires pour notre application. Celui-ci fonction par
+système de suites de tests contenus dans des fichiers `*.spec.{js,jsx}` ou `*.test.{js,jsx}`. Je vous recommande de
+faire un fichier de test par composant dans un dossier `__tests__/` immédiatement adjacent à votre composant et de le
+faire terminer par `.spec.jsx`. Par exemple pour le composant `App` cela donnera la structure suivante :
+
+```
+src
+ |- App.js
+ |- __tests__
+ |  |- App.spec.js
+```
+
+Ces suites de test utilisent une API similaire à celle de Mocha et Jasmine. Vous écrirez donc vos tests à l'aide des
+méthodes `describe`, `it` et `expect`, ce qui donnera l'exemple suivant :
+
+```js
+import App from '../App.js';
+
+describe('App', () => {
+  it('should exist', () => {
+    expect(App).toBeDefined();
+  });
+});
+```
+
+Les tests peuvent être lancés via la commande `yarn test`. Vous pouvez consultez la liste complète des matchers
+sur la [documentation](https://jestjs.io/docs/en/using-matchers).
+
+Pour tester de manière simple le rendu d'un composant React, AirBnB a développé un package appelé `enzyme` qui permet
+de rapidement accéder à n'importe quel élément du rendu. Nous allons donc commencer par installer Enzyme via :
+
+```bash
+yarn add -D enzyme enzyme-adapter-react-16
+```
+
+Il faudra ensuite créer un fichier pour configurer Enzyme afin de lui dire quel adapter utiliser pour faire le rendu
+React. Ce fichier sera lancé par Jest avant chaque suite de test. Le chemin pour le fichier sera
+`./src/setupTests.js` et contiendra le code suivant :
+
+```
+import Enzyme from 'enzyme';
+import Adapter from 'enzyme-adapter-react-16';
+
+Enzyme.configure({ adapter: new Adapter() });
+```
+
+Vous êtes maintenant prêt à écrire votre premier test de rendu React.
+
+## Enzyme
+
+Les tests de rendu React peuvent se présenter sous 2 formes, les `shallow` et les `mount`. Le premier permet de rendre
+uniquement le composant passé en paramètre alors que le second permet de rendre aussi l'intérieur des composants
+enfant. On utilisera donc plus facilement `shallow` pour des tests unitaires et `mount` pour des tests d'intégration.
+
+Lorsque l'on utilise une de ces 2 méthodes, Enzyme nous renvoie un wrapper autour du composant React qui possède toute
+une API similaire à JQuery pour trouver des éléments et vérifier qu'ils possèdent certaines propriétés. Par exemple,
+la méthode `find` nous permettra de chercher parmi tous les composants enfants. On pourra donc tester que le
+composant `HouseList` rend bien une `div` par maison de la manière suivante :
+
+```jsx harmony
+import React from 'react';
+import { shallow } from 'enzyme';
+import HousesList from '../HousesList';
+
+describe('HousesList', () => {
+  it('should render a div per house', () => {
+    const wrapper = shallow(<HousesList students={[]} />);
+    expect(wrapper.find('div.housesList__house').length).toEqual(3);
+  });
+});
+```
+
+Vous pouvez retrouver la totalité des fonctions qu'offre Enzyme sur la [documentation](https://airbnb.io/enzyme/).
+
+La limitation de ce type de test se ressent assez rapidement lorsque l'on a un grand nombre de props et de sous
+composant à vérifier, c'est pourquoi Jest possède la capacité de faire des tests de Snapshot.
+
+## Snapshots
+
+Les tests snapshots sont des tests qui consiste à écrire le résultat d'un test dans un fichier et de comparer les
+prochaines executions du même test avec ce fichier. En cas de différence, le test échouera. Ce la est très utile
+lorsque couplé à Enzyme, car celui-ci offre la possibilité de faire un rendu spécial snapshot qui permet de voir
+instantanément sous forme de pseudo HTML le rendu React. Mais tout autre objet JavaScript pouvant être transformé
+en JSON peut fonctionner. La méthode pour effectuer des tests snapshot est `expect(value).toMatchSnapshot()`.
+
+Pour rendre les tests snapshots avec Enzyme possible il faut tout d'abord installer `enzyme-to-json` en tant que
+`devDependencies` et ensuite changer la configuration de Jest pour utiliser son serializer de snapshot :
+
+```json
+{
+  "jest": {
+    "snapshotSerializers": [
+      "enzyme-to-json/serializer"
+    ]
   }
 }
 ```
 
-_Remarque : Le state ne doit jamais être initialisé avec une props, car comme les props sont changeantes, il n'est pas
-garanti que le state sois toujours initialisé avec la valeur que l'on souhaite._
+On pourra donc ensuite changer notre test pour `HousesList` par :
 
-### Modifier le state d'un composant
+```jsx harmony
+import React from 'react';
+import { shallow } from 'enzyme';
+import HousesList from '../HousesList';
 
-Le fait d'étendre `React.Component` nous donne accès à certaines API supplémentaire de React face aux composants sous
-forme de fonctions. En effet la méthode `this.setState()` est celle qui permet de changer l'état d'un composant et de
-déclencher un nouveau rendu.
-
-La fonction `setState` prend en paramètre un objet contenant la mise à jour que vous souhaitez effectuer et qui sera
-fusionné avec le state existant. Cela permet d'effectuer des mise à jour partiel du state si vous ne souhaitez pas
-changer toutes les valeur qu'il contient.
-
-### Réagir aux événement utilisateur
-
-Les éléments DOM possèdent des attributs permettant d'écouter les interactions de l'utilisateur tel que `onclick`,
-`onblur`, etc. De la même manière en JSX ces attributs existent mais sont écrits en camelCase. Par exemple `onclick`
-devient `onClick`.
-
-On pourra donc effectuer une mise à jour du state au clique d'un bouton :
-
-```jsx
-class Counter extends React.Component {
-  state = {
-    value: 0
-  };
-
-  handleClick = () => this.setState({ value: this.state.value + 1 });
-
-  render() {
-    const { value } = this.state;
-    return (
-      <div>
-        Counter value: {value}
-        <br />
-        <button onClick={this.handleClick}>Increment</buutton>
-      </div>
-    );
-  }
-}
+describe('HousesList', () => {
+  it('should render a div per house', () => {
+    const wrapper = shallow(<HousesList students={[]} />);
+    expect(wrapper).toMatchSnapshot();
+  });
+});
 ```
 
-_Note : la syntaxe `handleClick = () => ...` est aussi une propriété de classe, mais avec la particularité de bind
-l'instance de la classe à la fonction. Cela revient à écrire dans le constructeur
-`this.handleClick = this.handleClick.bind(this);`. Cela permet de s'assurer que la méthode `handleClick` est toujours
-bien appelé avec le bon `this`._
+Il est aussi possible de tester des interactions avec Enzyme via la fonction `simulate`. Par exemple, pour tester le
+submit d'un formulaire on écrira :
 
-Les listeners reçoivent en argument un événement synthétique React qui englobe l'événement DOM original. Toutes les
-propriétés de l'événement original sont conservées.
-
-## Cycle de vie
-
-Les composants React possèdent plusieurs événement internes au cours de leur utilisation dans l'application. Nous
-allons nous concentrer sur 2 particulièrement qui sont `componentDidMount` et `componentWillUnmount` qui permettent
-respectivement d'effectuer des opération quand le composant React est monté dans le DOM et juste avant qu'il soit
-nettoyé du DOM quand celui-ci est détruit.
-
-`componentDidMount` est très souvent utilisé pour aller chercher des données avec des appels XHR ou mettre en place
-des timers. Comme il est appelé au moment où le composant apparaît dans le DOM, on s'assure qu'on n'execute pas des
-actions pour rien car on sait que le composant va être affiché.
-
-`componentWillUnmount` sert quand à lui à faire le nettoyage. Vous pouvez par exemple supprimer les timers créer
-dans le `componentDidMount`. Enlever des listeners sur `window`, etc. Ceci est important car provoquer un `setState`
-sur un composant qui est détruit aura pour conséquence de faire crasher votre application. En plus de cela, le fait
-de ne pas nettoyer vos listeners/timers peut créer des fuites mémoires importantes.
-
-### Utilisation
-
-De la même manière que pour le state, les méthodes de cycle de vie ne sont disponible que dans les classes ES6 :
-
-```jsx
-class Counter extends React.Component {
-  state = {
-    value: 0
-  };
-
-  componentDidMount() {
-    this.timer = setInterval(() => this.setState({ value: this.state.value + 1 }), 1000);
-  }
-
-  componentWillUnmount() {
-    clearInterval(this.timer);
-  }
-
-  render() {
-    const { value } = this.state;
-    return <div>Counter value: {value}</div>;
-  }
-}
+```js
+wrapper.find('form').simulate('submit', eventMock);
 ```
+
+## PropTypes
+
+Les proptypes en React sont des définitions de type pour les propriété des composants. Cela permet de s'assurer que les
+bonnes données sont envoyées au bon format à chaque composant. Pour définir des prop types il faut commencer par
+installer le package `prop-types` en `dependencies` car il est automatiquement nettoyé par Webpack en production donc
+pas besoin de le marquer comme dépendance de dev. Les prop-types se présentent ensuite sous cette forme :
+
+```jsx harmony
+import React from 'react';
+import PropTypes from 'prop-types';
+
+const MyComponent = ({ someProp }) => (
+  <div>
+    {someProp}
+  </div>
+);
+
+MyComponent.propTypes = {
+  someProp: PropTypes.string.isRequired,
+};
+
+export default MyComponent;
+```
+
+Vous pouvez aller consulter la [documentation](https://reactjs.org/docs/typechecking-with-proptypes.html) pour voir la
+liste complète des types supportés. Le but étant de créer un schéma le plus robuste possible afin de s'assurer le moins
+de surprises possibles.
+
+L'avantage notoire des prop-types est qu'elles sont analysée au runtime, ce qui permet de voir en temps réel à
+l'utilisation de l'application que rien ne dérape. En revanche on aura aucune information à la compilation.
 
 ## Exercice
 
-Maintenant que vous êtes en mesure de gérer des interactions en React, nous allons ajouter à notre Choixpeau la
-possibilité d'ajouter des étudiants aux différentes maisons. Pour ce faire, il va falloir ajouter un petit formulaire
-en haut de la page permettant de saisir le nom et prénom d'un étudiant, puis un bouton permettant de valider.
-L'étudiant sera ensuite assigné de manière aléatoire à l'une des 3 maisons.
-
-Vous pouvez écouter l'événement `onChange` sur les éléments de type `input` pour stocker leur valeur dans le state.
-La valeur d'un input peut être trouvé dans `event.target.value`.
-
-Pour la soumission du formulaire, écoutez l'événement `onSubmit` de l'élément `form`. N'oubliez pas d'annuler le
-comportement de base via `event.preventDefault()`.
-
-Ajoutez un state au composant `App` contenant la liste des étudiants courante initialisée avec les données contenues
-dans le JSON `./src/data/students.json` que vous passerez en prop à `HousesList`. Ensuite créez un composant
-`StudentForm` qui contiendra le formulaire ainsi qu'un state contenant les valeurs des 2 champs textes. Passez en prop
-de `StudentForm` une fonction de callback pour gérer la soumission du formulaire qui modifiera le state de `App`
-avec le nouvel étudiant en paramètre.
+Maintenant que vous êtes en mesure de tester et maintenir correctement votre application, écrivez les tests pour
+couvrir 100% de votre application. Vous pouvez vérifier le taux de couverture via `yarn test --coverage`. Assurez vous
+aussi que votre app ne contienne aucune erreur de lint via la commande `yarn lint`.
