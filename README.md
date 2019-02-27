@@ -60,30 +60,52 @@ sécurisées et de nettoyer tout correctement quand le composant est démonté.
 
 `useEffect` prend en paramètre une fonction qui sera executée, par défaut, à tous les rendus. Cette fonction peut, ou
 non, renvoyer à son tour une autre fonction de nettoyage (détruire la souscription à des events, nettoyer des timers,
-annuler un appel XHR, etc).
+annuler un appel XHR, etc). Cette fonction de nettoyage est appelée aussi à chaque re-rerender **avant** la fonction de
+side effect. En effet l'effet précédent doit être cleané avant d'appliquer le suivant. Le cleanup est aussi appelé
+lorsque le composant est démonté (`componentWillUnmount`).
 
 ```js
-useEffect(() => {
-  const timer = setInterval(() => { /* Unicorn dance */ }, 1000);
-  return () => clearInterval(timer);
-});
+const MyComp = () => {
+  useEffect(() => {
+    // Side-effect
+    const timer = setInterval(() => { /* Unicorn dance */ }, 1000);
+  
+    // Cleanup
+    return () => clearInterval(timer);
+  });
+};
 ```
 
-Dans le cas d'un appel XHR, on ne souhaite par forcément le refaire à chaque rendu du composant. Heureusement,
-`useEffect` prend en deuxième argument, un tableau contenant des valeurs à comparer avec le dernier appel à `useEffect`.
-Si les valeurs de ce tableau changent alors le la fonction de side effect sera appelée sinon elle sera ignorée.
+Dans certains cas on souhaitera executer la fonction de cleanup/side effect au changement de certaines props uniquement.
+`useEffect` prend en deuxième argument, un tableau contenant des valeurs à comparer avec le dernier appel.
+Si les valeurs de ce tableau changent alors la fonction de side effect sera appelée sinon elle sera ignorée.
+:warning: la comparaison n'est pas profonde, ne modifiez donc pas l'intérieur des objets contenus dans le tableau sans
+régénérer une nouvelle instance pour changer sa référence.
 
 ```js
 const MyComp = ({ intervalTimer }) => {
   useEffect(() => {
-    const timer = setInterval(() => { /* Unicorn dance */ }, intervalTimer);
+    const timer = setInterval(() => console.log('Unicorn dance'), intervalTimer);
     return () => clearInterval(timer);
   }, [intervalTimer]);
   return 'Foo';
 }
 ```
 
-Il est possible de ne passer aucune valeur et dans ce cas, l'effet ne sera executé qu'une seule fois comme un
+Voici un output potentiel de l'exemple ci-dessus:
+
+```
+- MyComp est monté dans le DOM avec la prop intervalTimer à 1000.
+- L'interval est crée avec un timer de 1000.
+- 1 seconde plus tard, "Unicorn dance" apparaît dans la console.
+- Une autre seconde s'écoule et "Unicorn dance" s'affiche à nouveau.
+- La propriété intervalTimer change à 500.
+- L'ancien timer de 1s est annulé par la fonction de cleanup.
+- L'interval est re-créé avec un timer de 500 par la fonction de side-effect.
+- 500ms plus tard, la console affiche "Unicorn dance".
+```
+
+Il est aussi possible de ne passer aucune valeur et dans ce cas, l'effet ne sera executé qu'une seule fois comme un
 `componentDidMount`.
 
 Cela donne donc le résultat suivant pour un appel XHR :
@@ -122,4 +144,98 @@ Dans le cas où un appel XHR est long, il est possible que l'utilisateur change 
 l'appel ne finisse d'aboutir. Avec le code précédemment écrit, React jettera une erreur à la ligne
 `setState({ loading: false, results: await response.json() });` car il est impossible d'appeler `setState` sur un
 composant démonté. Pour éviter cela, il est donc conseillé d'annuler l'appel si jamais l'utilisateur provoque le
-démontage du composant. `fetch` ne supporte pas de base l'annulation
+démontage du composant.
+
+Pour annuler un appel XHR fait avec fetch, il faut utiliser un `AbortController`. Celui-ci pourra donner un signal sur
+commande d'annuler la requête XHR.
+
+```js
+const controller = new AbortController();
+fetch('/path/to/api', {
+  signal: controller.signal,
+});
+
+// Somewhere else
+controller.abort();
+```
+
+On peut donc utiliser cette méthode pour empêcher les erreurs de composant démonté de la manière suivante :
+
+```js
+const [state, setState] = useState({ loading: false, error: false, results: [] });
+useEffect(async () => {
+  setState({ ...state, loading: true });
+  const controller = new AbortController();
+  try {
+    const response = await fetch('/some/url', { signal: controller.signal });
+    setState({ ...state, loading: false, results: await response.json() });
+  } catch (e) {
+    setState({ ...state, loading: false, error: true });
+  }
+  return () => controller.abort();
+}, []);
+```
+
+## Composition des hooks
+
+Avec les derniers exemples que l'on a vu, on commence à voir que le code devient assez velu et que si on doit répeter
+cela pour chaque composant qui possède un call à une API, ça deviendra vite lourd. Comme dit précédemment, les hooks
+sont composables et peuvent facilement être utilisés les uns avec les autres pour former des hooks plus gros.
+
+On pourra donc écrire un hook qui nous servira dans n'importe quel composant à faire un appel XHR via le code suivant :
+
+```js
+// useXHRCall.js
+export const useXHRCall = (url, options, defaultValue = []) => {
+  const [state, setState] = useState({ loading: false, error: false, data: defaultValue });
+  useEffect(async () => {
+    setState({ ...state, loading: true });
+    const controller = new AbortController();
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      setState({ ...state, loading: false, data: await response.json() });
+    } catch (e) {
+      setState({ ...state, loading: false, error: true });
+    }
+    return () => controller.abort();
+  }, []);
+  return state;
+}
+
+// MyComp.jsx
+const MyComp = () => {
+  const { loading, error, data } = useXHRCall('/path/to/api', { method: 'POST' });
+  if (loading) {
+    return 'Loading...';
+  }
+  if (error) {
+    return 'Error :(';
+  }
+  return (
+    <ul>
+      {data.map(result => <li>{result}</li>)}
+    </ul>
+  );
+};
+```
+
+## Exercice
+
+Il temps maintenant de mettre en pratique ce que l'on a appris pour utiliser l'API du Choixpeau. Commencez par démarrer
+celle-ci avec :
+
+```bash
+yarn start:api
+```
+
+Cette API possède 3 endpoints :
+
+```
+GET /students
+POST /students
+GET /houses
+```
+
+Vous devrez donc dans cet exercice, utiliser les 2 endpoints GET pour récupérer les données à afficher dans
+l'application et utiliser l'endpoint POST pour ajouter un nouvel étudiant à l'application. Vous recevrez en réponse du
+POST l'étudiant avec l'id auto-incrémenté et sa maison assignée.
