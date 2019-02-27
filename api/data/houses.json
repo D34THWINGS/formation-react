@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Gryffindor",
+    "picture": "gryffindor",
+    "color": "#a91414"
+  },
+  {
+    "id": 2,
+    "name": "Slytherin",
+    "picture": "slytherin",
+    "color": "#14a914"
+  },
+  {
+    "id": 3,
+    "name": "Hufflepuff",
+    "picture": "hufflepuff",
+    "color": "#1414a9"
+  }
+]
