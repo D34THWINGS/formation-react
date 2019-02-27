@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 
@@ -32,34 +32,38 @@ const StudentFormButton = styled.button`
   cursor: pointer;
 `;
 
-class StudentForm extends Component {
-  state = {
-    firstName: '',
-    lastName: '',
-  };
+const handleChange = (input, state, setState) => e => setState({
+  ...state,
+  [input]: e.target.value,
+});
 
-  handleChange = input => e => this.setState({ [input]: e.target.value });
+const handleSubmit = ({ firstName, lastName }, setState, onAddStudent) => (e) => {
+  e.preventDefault();
+  onAddStudent({ firstName, lastName });
+  setState({ firstName: '', lastName: '' });
+};
 
-  handleSubmit = (e) => {
-    e.preventDefault();
-    const { firstName, lastName } = this.state;
-    const { onAddStudent } = this.props;
-    onAddStudent({ firstName, lastName });
-    this.setState({ firstName: '', lastName: '' });
-  };
-
-  render() {
-    const { firstName, lastName } = this.state;
-    return (
-      <StyledStudentForm onSubmit={this.handleSubmit}>
-        <StudentFormTitle>Nouvel étudiant</StudentFormTitle>
-        <StudentFormInput type="text" name="firstName" value={firstName} onChange={this.handleChange('firstName')} />
-        <StudentFormInput type="text" name="lastName" value={lastName} onChange={this.handleChange('lastName')} />
-        <StudentFormButton type="submit">Ajouter</StudentFormButton>
-      </StyledStudentForm>
-    );
-  }
-}
+const StudentForm = ({ onAddStudent }) => {
+  const [state, setState] = useState({ firstName: '', lastName: '' });
+  return (
+    <StyledStudentForm onSubmit={handleSubmit(state, setState, onAddStudent)}>
+      <StudentFormTitle>Nouvel étudiant</StudentFormTitle>
+      <StudentFormInput
+        type="text"
+        name="firstName"
+        value={state.firstName}
+        onChange={handleChange('firstName', state, setState)}
+      />
+      <StudentFormInput
+        type="text"
+        name="lastName"
+        value={state.lastName}
+        onChange={handleChange('lastName', state, setState)}
+      />
+      <StudentFormButton type="submit">Ajouter</StudentFormButton>
+    </StyledStudentForm>
+  );
+};
 
 StudentForm.propTypes = {
   onAddStudent: PropTypes.func.isRequired,

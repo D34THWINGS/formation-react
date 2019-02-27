@@ -1,11 +1,12 @@
-import React, { Component } from 'react';
+import React, { useReducer } from 'react';
 import styled from '@emotion/styled';
-import { Global, css } from '@emotion/core';
+import { css, Global } from '@emotion/core';
 
 import Menu from './components/Menu';
 import HousesList from './components/HousesList';
 import studentsData from './data/students';
 import StudentForm from './components/StudentForm';
+import { ADD_STUDENT, addStudent, deleteStudent } from './actions';
 
 const StyledApp = styled.div`
   padding: 6rem 2rem 2rem;
@@ -23,33 +24,37 @@ const globalStyles = css`
   }
 `;
 
-class App extends Component {
-  state = {
-    students: studentsData,
-  };
+const initialState = { students: studentsData };
 
-  handleAddStudent = (student) => {
-    const { students } = this.state;
-    return this.setState({
-      students: [...students, {
-        ...student,
-        id: students.length + 1,
-        house: Math.round(Math.random() * 2) + 1,
-      }],
-    });
-  };
-
-  render() {
-    const { students } = this.state;
-    return (
-      <StyledApp className="App">
-        <Global styles={globalStyles} />
-        <Menu />
-        <StudentForm onAddStudent={this.handleAddStudent} />
-        <HousesList students={students} />
-      </StyledApp>
-    );
+const appReducer = (state, action) => {
+  switch (action.type) {
+    case ADD_STUDENT:
+      return {
+        ...state,
+        students: [...state.students, {
+          ...action.payload,
+          id: state.students.length + 1,
+          house: Math.round(Math.random() * 2) + 1,
+        }],
+      };
+    default:
+      throw new Error(`Unhandled action: ${action.type}`);
   }
-}
+};
+
+const App = () => {
+  const [{ students }, dispatch] = useReducer(appReducer, initialState);
+  return (
+    <StyledApp className="App">
+      <Global styles={globalStyles} />
+      <Menu />
+      <StudentForm
+        onAddStudent={student => dispatch(addStudent(student))}
+        onDeleteStudent={studentId => dispatch(deleteStudent(studentId))}
+      />
+      <HousesList students={students} />
+    </StyledApp>
+  );
+};
 
 export default App;
