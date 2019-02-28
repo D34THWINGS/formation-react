@@ -6,7 +6,7 @@ const houses = require('./data/houses');
 
 const app = express();
 
-app.use(bodyParser);
+app.use(bodyParser.json());
 
 app.get('/students', (req, res) => res.json(students));
 
