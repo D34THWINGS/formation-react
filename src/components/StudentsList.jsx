@@ -14,11 +14,17 @@ const StyledStudentsList = styled.ul`
 `;
 
 const DeleteButton = styled.button`
+  float: right;
   margin-left: 5px;
   border: none;
   border-radius: 0;
   background: #666;
   color: #fff;
+  cursor: pointer;
+  
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
 const StudentsList = ({ students, onDeleteStudent }) => (

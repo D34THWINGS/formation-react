@@ -192,19 +192,23 @@ export const useXHRCall = (url, options, defaultValue = []) => {
     setState({ ...state, loading: true });
     const controller = new AbortController();
     try {
-      const response = await fetch(url, { ...options, signal: controller.signal });
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+        headers: { ...options.headers, 'Content-Type': 'application/json' },
+      });
       setState({ ...state, loading: false, data: await response.json() });
     } catch (e) {
       setState({ ...state, loading: false, error: true });
     }
     return () => controller.abort();
   }, []);
-  return state;
+  return [state, setState];
 }
 
 // MyComp.jsx
 const MyComp = () => {
-  const { loading, error, data } = useXHRCall('/path/to/api', { method: 'POST' });
+  const [{ loading, error, data }] = useXHRCall('/path/to/api', { method: 'POST' });
   if (loading) {
     return 'Loading...';
   }
@@ -232,10 +236,10 @@ Cette API possède 3 endpoints :
 
 ```
 GET /students
-POST /students
 GET /houses
 ```
 
 Vous devrez donc dans cet exercice, utiliser les 2 endpoints GET pour récupérer les données à afficher dans
-l'application et utiliser l'endpoint POST pour ajouter un nouvel étudiant à l'application. Vous recevrez en réponse du
-POST l'étudiant avec l'id auto-incrémenté et sa maison assignée.
+l'application. Utilisez le hook `useXHRCall` décrit ci-dessus pour vous aider. La création/suppression d'étudiants
+devra encore se faire côté frontend uniquement. Pour ce faire, utilisez le `setState` renvoyé par `useXHRCall` pour
+modifier la liste des étudiants.
