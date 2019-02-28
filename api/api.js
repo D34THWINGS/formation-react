@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const students = require('./data/students');
 const houses = require('./data/houses');
@@ -7,11 +8,7 @@ const houses = require('./data/houses');
 const app = express();
 
 app.use(bodyParser.json());
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin:', '*');
-  res.setHeader('Access-Control-Allow-Methods:', '*');
-  next();
-});
+app.use(cors());
 
 app.get('/students', (req, res) => res.json(students));
 
