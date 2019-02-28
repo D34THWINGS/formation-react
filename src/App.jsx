@@ -1,12 +1,11 @@
-import React, { useReducer } from 'react';
+import React from 'react';
 import styled from '@emotion/styled';
 import { css, Global } from '@emotion/core';
 
 import Menu from './components/Menu';
 import HousesList from './components/HousesList';
-import studentsData from './data/students';
 import StudentForm from './components/StudentForm';
-import { ADD_STUDENT, addStudent, DELETE_STUDENT, deleteStudent } from './actions';
+import useXHRCall from './hooks/useXHRCall';
 
 const StyledApp = styled.div`
   padding: 6rem 2rem 2rem;
@@ -24,39 +23,30 @@ const globalStyles = css`
   }
 `;
 
-const initialState = { students: studentsData };
+const handleAddStudent = (state, setState) => student => setState({
+  ...state,
+  data: [...state.students, {
+    ...student,
+    id: state.students.length + 1,
+    house: Math.round(Math.random() * 2) + 1,
+  }],
+});
 
-const appReducer = (state, action) => {
-  switch (action.type) {
-    case ADD_STUDENT:
-      return {
-        ...state,
-        students: [...state.students, {
-          ...action.payload,
-          id: state.students.length + 1,
-          house: Math.round(Math.random() * 2) + 1,
-        }],
-      };
-    case DELETE_STUDENT:
-      return {
-        ...state,
-        students: state.students.filter(student => student.id !== action.payload.studentId),
-      };
-    default:
-      throw new Error(`Unhandled action: ${action.type}`);
-  }
-};
+const handleDeleteStudents = (state, setState) => studentId => setState({
+  ...state,
+  data: state.students.filter(student => student.id !== studentId),
+});
 
 const App = () => {
-  const [{ students }, dispatch] = useReducer(appReducer, initialState);
+  const [state, setState] = useXHRCall('/students');
   return (
     <StyledApp className="App">
       <Global styles={globalStyles} />
       <Menu />
-      <StudentForm onAddStudent={student => dispatch(addStudent(student))} />
+      <StudentForm onAddStudent={handleAddStudent(state, setState)} />
       <HousesList
-        students={students}
-        onDeleteStudent={studentId => dispatch(deleteStudent(studentId))}
+        students={state.data}
+        onDeleteStudent={handleDeleteStudents(state, setState)}
       />
     </StyledApp>
   );

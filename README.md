@@ -1,245 +1,335 @@
-# Étape 7
+# Étape 8
 
-Jusqu'à présent, notre application utilisait des données stockées directement dans l'application mais une grande partie
-du temps ces données viennent d'une API et nécessitent d'être récupérées via des appels XHR. Nous allons donc voir
-comment gérer les appels asynchrones dans notre application.
+Nous avons vu comment construire un hook simple pour faire des appels XHR avec `useState` et `useEffect`. Nous avons
+aussi vu comment gérer des actions au sein de notre application avec `useReducer`. Dans notre exercice précédant il
+était demandé pour des raisons de simplification de ne pas utiliser `useReducer` pour faire les appels XHR, nous
+allons maintenant voir comment procéder.
 
-## Composants asynchrones
+## Composition complexe
 
-### Ancienne méthode
+Commençons par écrire un reducer qui pourrait gérer des appels XHR : Nous avons besoin de 3 actions, une pour le
+démarrage du call et indiquer que l'on est en train de charger, une pour le succès et une pour l'erreur. On pourra
+donc écrire :
 
-Avant l'arrivée des hooks la méthode consistait à récupérer les données avec `fetch` dans le `componentDidMount`,
-de faire un `setState` pour écrire dans le state du composant qu'il est en train de charger, puis refaire un autre
-`setState` en cas de succès ou d'erreur. Ceci forçait encore une fois à l'utilisation d'une classe ES6 :
-
-```jsx harmony
-import React, { Component } from 'react';
-
-class Readme extends Component {
-  state = {
-    loading: false,
-    error: false,
-    results: [],
-  };
-
-  async componentDidMount() {
-    this.setState({ loading: true });
-    try {
-      const response = await fetch('/some/url');
-      this.setState({ loading: false, results: await response.json() });
-    } catch (e) {
-      this.setState({ loading: false, error: true });
-    }
+```js
+const appReducer = (state, action) => {
+  switch (action.type) {
+    case 'ADD_STUDENT':
+      // Handle student add
+    case 'DELETE_STUDENT':
+      // Handle student delete
+    case 'FETCH_STUDENTS_START':
+      return { ...state, loading: true };
+    case 'FETCH_STUDENTS_SUCCESS':
+      return { ...state, loading: false, students: action.payload };
+    case 'FETCH_STUDENTS_ERROR':
+      return { ...state, loading: false, error: true };
+    default:
+      return state;
   }
-
-  render() {
-    const { loading, error, results } = this.state;
-    if (loading) {
-      return 'Loading...';
-    }
-    if (error) {
-      return 'Error :(';
-    }
-    return (
-      <ul>
-        {results.map(result => <li>{result}</li>)}
-      </ul>
-    );
- }
-}
-
-export default Readme;
-```
-
-### Nouvelle méthode
-
-Grâce aux hooks, la gestion asynchrone est devenue bien plus simple qu'auparavant. En effet il existe un hook fait pour
-gérer n'importe quel side effect appelé `useEffect`. Celui-ci permet d'effectuer des actions en dehors de React
-(souscrire à des événements sur `window`, ouvrir une websocket, faire un appel XHR, etc), de manière
-sécurisées et de nettoyer tout correctement quand le composant est démonté.
-
-`useEffect` prend en paramètre une fonction qui sera executée, par défaut, à tous les rendus. Cette fonction peut, ou
-non, renvoyer à son tour une autre fonction de nettoyage (détruire la souscription à des events, nettoyer des timers,
-annuler un appel XHR, etc). Cette fonction de nettoyage est appelée aussi à chaque re-rerender **avant** la fonction de
-side effect. En effet l'effet précédent doit être cleané avant d'appliquer le suivant. Le cleanup est aussi appelé
-lorsque le composant est démonté (`componentWillUnmount`).
-
-```js
-const MyComp = () => {
-  useEffect(() => {
-    // Side-effect
-    const timer = setInterval(() => { /* Unicorn dance */ }, 1000);
-  
-    // Cleanup
-    return () => clearInterval(timer);
-  });
-};
-```
-
-Dans certains cas on souhaitera executer la fonction de cleanup/side effect au changement de certaines props uniquement.
-`useEffect` prend en deuxième argument, un tableau contenant des valeurs à comparer avec le dernier appel.
-Si les valeurs de ce tableau changent alors la fonction de side effect sera appelée sinon elle sera ignorée.
-:warning: la comparaison n'est pas profonde, ne modifiez donc pas l'intérieur des objets contenus dans le tableau sans
-régénérer une nouvelle instance pour changer sa référence.
-
-```js
-const MyComp = ({ intervalTimer }) => {
-  useEffect(() => {
-    const timer = setInterval(() => console.log('Unicorn dance'), intervalTimer);
-    return () => clearInterval(timer);
-  }, [intervalTimer]);
-  return 'Foo';
 }
 ```
 
-Voici un output potentiel de l'exemple ci-dessus:
+On commence à voir que cela représente potentiellement beaucoup d'actions si plusieurs appels à l'API sont fait. On
+peut donc imaginer un reducer qui fonctionnerait pour n'importe quel appel à l'API et que l'on pourrait réutiliser à
+souhait au sein d'autres reducers.
 
-```
-- MyComp est monté dans le DOM avec la prop intervalTimer à 1000.
-- L'interval est crée avec un timer de 1000.
-- 1 seconde plus tard, "Unicorn dance" apparaît dans la console.
-- Une autre seconde s'écoule et "Unicorn dance" s'affiche à nouveau.
-- La propriété intervalTimer change à 500.
-- L'ancien timer de 1s est annulé par la fonction de cleanup.
-- L'interval est re-créé avec un timer de 500 par la fonction de side-effect.
-- 500ms plus tard, la console affiche "Unicorn dance".
-```
+### Composition de reducers
 
-Il est aussi possible de ne passer aucune valeur et dans ce cas, l'effet ne sera executé qu'une seule fois comme un
-`componentDidMount`.
+Les reducers, au même titre que les hooks, sont de simples fonctions. Il est donc possible aussi de les composer entre
+eux afin de les éclater en plus petits morceaux. Par exemple :
 
-Cela donne donc le résultat suivant pour un appel XHR :
-
-```jsx harmony
-const MyComp = ({ intervalTimer }) => {
-  const [state, setState] = useState({ loading: false, error: false, results: [] });
-  
-  useEffect(async () => {
-    setState({ ...state, loading: true });
-    try {
-      const response = await fetch('/some/url');
-      setState({ ...state, loading: false, results: await response.json() });
-    } catch (e) {
-      setState({ ...state, loading: false, error: true });
-    }
-  }, []);
-  
-  if (state.loading) {
-    return 'Loading...';
+```js
+const fetchStudentsReducer = (state, action) => {
+  switch (action.type) {
+    case 'FETCH_STUDENTS_START':
+      return { ...state, loading: true };
+    case 'FETCH_STUDENTS_SUCCESS':
+      return { ...state, loading: false, students: action.payload };
+    case 'FETCH_STUDENTS_ERROR':
+      return { ...state, loading: false, error: true };
+    default:
+      return state;
   }
-  if (state.error) {
-    return 'Error :(';
+}
+
+const appReducer = (state, action) => {
+  switch (action.type) {
+    case 'ADD_STUDENT':
+      // Handle student add
+    case 'DELETE_STUDENT':
+      // Handle student delete
+    default:
+      return fetchStudentsReducer(state, action);
   }
-  return (
-    <ul>
-      {state.results.map(result => <li>{result}</li>)}
-    </ul>
-  );
 }
 ```
 
-## Annulation d'appel XHR
-
-Dans le cas où un appel XHR est long, il est possible que l'utilisateur change de page ou ferme le composant avant que
-l'appel ne finisse d'aboutir. Avec le code précédemment écrit, React jettera une erreur à la ligne
-`setState({ loading: false, results: await response.json() });` car il est impossible d'appeler `setState` sur un
-composant démonté. Pour éviter cela, il est donc conseillé d'annuler l'appel si jamais l'utilisateur provoque le
-démontage du composant.
-
-Pour annuler un appel XHR fait avec fetch, il faut utiliser un `AbortController`. Celui-ci pourra donner un signal sur
-commande d'annuler la requête XHR.
+`fetchStudentsReducer` pourrait très bien être utilisé pour n'importe quel autre call XHR s'il ne stockait pas ses
+données dans le state global de l'application et s'il n'était pas dépendant de la clé `students` pour stocker les
+résultats du call. Essayons donc de voir comment cela serait possible :
 
 ```js
-const controller = new AbortController();
-fetch('/path/to/api', {
-  signal: controller.signal,
+const fetchReducer = actionPrefix => (state, action) => {
+  switch (action.type) {
+    case `${actionPrefix}_START`:
+      return { ...state, loading: true };
+    case `${actionPrefix}_SUCCESS`:
+      return { ...state, loading: false, data: action.payload };  // <-- remplacement de `students` par `data`
+    case `${actionPrefix}_ERROR`:
+      return { ...state, loading: false, error: true };
+    default:
+      return state;
+  }
+}
+
+const fetchStudentsReducer = fetchReducer('FETCH_STUDENTS');
+
+const appReducer = (state, action) => {
+  switch (action.type) {
+    case 'ADD_STUDENT':
+      // Handle student add
+    case 'DELETE_STUDENT':
+      // Handle student delete
+    default:
+      return { students: fetchStudentsReducer(state.students, action) }; // <-- Stockage dans `state.students`
+  }
+}
+```
+
+Malheureusement le code ci-dessus pose un problème. Il génère systématiquement un nouvel objet lorsque que l'on tombe
+dans le cas par défaut, ce qui veut dire un re-render systématique alors que ce n'est pas forcément nécessaire. Pour
+palier à ce problème on doit donc ajouter une condition pour vérifier que `state.students` n'a pas changé pour
+générer un nouvel objet.
+
+```js
+const appReducer = (state, action) => {
+  switch (action.type) {
+    // Other cases...
+    default:
+      const newStudentsState = fetchStudentsReducer(state.students, action);
+      return newStudentsState !== state.students ? { ...state, students: newStudentsState } : state;
+  }
+}
+```
+
+Nous avons maintenant un sous-reducer complètement fonctionnel et non-dépendant d'un call particulier. Cependant on voit
+vite que si plusieurs call sont gérés dans le même reducer, cela va vite devenir chaotique :
+
+```js
+const appReducer = (state, action) => {
+  switch (action.type) {
+    // Other cases...
+    default:
+      const newStudentsState = fetchStudentsReducer(state.students, action);
+      const newHousesState = fetchHousesReducer(state.house, action);
+      let newState = state;
+      if (newStudentsState !== state.students) {
+        newState = { ...newState, students: newStudentsState };
+      }
+      if (newHousesState !== state.houses) {
+        newState = { ...newState, students: newHousesState };
+      }
+      return newState;
+  }
+}
+```
+
+Encore une fois, essayons de factoriser ce code pour minimiser la répétition :
+
+```js
+const composeReducers = (reducers) => (state, action) => Object.entries(reducers).reduce((oldState, [key, reducer]) => {
+  const reducerState = reducer(oldState[key], action);
+  return reducerState !== oldState[key] ? { ...oldState, [key]: reducerState } : oldState;
+}, state);
+
+const fetchReducers = composeReducers({
+  students: fetchReducer('FETCH_STUDENTS'),
+  houses: fetchReducer('FETCH_HOUSES'),
 });
 
-// Somewhere else
-controller.abort();
+const appReducer = (state, action) => {
+  switch (action.type) {
+    // Other cases...
+    default:
+      return fetchReducers(state, action);
+  }
+}
 ```
 
-On peut donc utiliser cette méthode pour empêcher les erreurs de composant démonté de la manière suivante :
+Pour détailler un peu plus le fonctionnement de `composeReducers`, c'est une fonction qui va donc prendre en paramètre
+une collection de reducers, et qui en sortie, renverra un autre reducer chargé d'appeler tous ceux présent dans la
+collection un par un. Dans le cas ou un reducer renvoie un objet différent de l'ancien state, on générera un nouveau
+state global sinon l'ancien sera retourné.
+
+### Adaptation des hooks
+
+Maintenant que nous avons un moyen simple de gérer des appels à l'API dans notre reducer, il est temps de regarder du
+côté de nos hooks pour voir comment on peut les simplifier aussi. En effet pour le moment, si on veut faire un appel
+pour récupérer les étudiants, il va nous falloir écrire :
 
 ```js
-const [state, setState] = useState({ loading: false, error: false, results: [] });
-useEffect(async () => {
-  setState({ ...state, loading: true });
-  const controller = new AbortController();
-  try {
-    const response = await fetch('/some/url', { signal: controller.signal });
-    setState({ ...state, loading: false, results: await response.json() });
-  } catch (e) {
-    setState({ ...state, loading: false, error: true });
-  }
-  return () => controller.abort();
+const [state, dispatch] = useReducer(appReducer, initialState);
+useEffect(() => {
+  dispatch({ type: 'FETCH_STUDENTS_START' });
+  fetch('/students')
+    .then((response) => response.json())
+    .then((data) => dispatch({ type: 'FETCH_STUDENTS_SUCCESS', payload: data }))
+    .catch((e) => dispatch({ type: 'FETCH_STUDENTS_ERROR', payload: e }));
 }, []);
 ```
 
-## Composition des hooks
-
-Avec les derniers exemples que l'on a vu, on commence à voir que le code devient assez velu et que si on doit répeter
-cela pour chaque composant qui possède un call à une API, ça deviendra vite lourd. Comme dit précédemment, les hooks
-sont composables et peuvent facilement être utilisés les uns avec les autres pour former des hooks plus gros.
-
-On pourra donc écrire un hook qui nous servira dans n'importe quel composant à faire un appel XHR via le code suivant :
+Encore une fois, on voit qu'il est possible de factoriser ce code en créant un hook qui va gérer tout cela pour nous :
 
 ```js
-// useXHRCall.js
-export const useXHRCall = (url, options, defaultValue = []) => {
-  const [state, setState] = useState({ loading: false, error: false, data: defaultValue });
-  useEffect(async () => {
-    setState({ ...state, loading: true });
-    const controller = new AbortController();
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        headers: { ...options.headers, 'Content-Type': 'application/json' },
-      });
-      setState({ ...state, loading: false, data: await response.json() });
-    } catch (e) {
-      setState({ ...state, loading: false, error: true });
-    }
-    return () => controller.abort();
+const useFetchWithDispatch = (actionPrefix, url, options = {}) => (dispatch) => {
+  useEffect(() => {
+    dispatch({ type: `${actionPrefix}_START` });
+    fetch(url, options)
+      .then((response) => response.json())
+      .then((data) => dispatch({ type: `${actionPrefix}_SUCCESS`, payload: data }))
+      .catch((e) => dispatch({ type: `${actionPrefix}_ERROR`, payload: e }));
   }, []);
-  return [state, setState];
+}
+```
+
+Que l'on utilisera de la manière suivante :
+
+```js
+// Outside of the component
+const useFetchStudents = useFetchWithDispatch('FETCH_STUDENTS', '/students');
+
+// Inside render function
+const [state, dispatch] = useReducer(appReducer, initialState);
+useFetchStudents(dispatch);
+```
+
+_Note: la volonté de couper `useFetchWithDispatch` en deux fonctions permet de réutiliser facilement dans n'importe
+quel composant avec un reducer l'appel à /students sans avoir à reconfigurer l'url, le prefix des actions et les options
+de fetch._
+
+### State et dispatch globaux
+
+Dans notre application, plusieurs composants sont amenés à travailler avec le state de l'application (`StudentForm` et
+`StudentsList`). Pour éviter d'avoir à passer des props de parent à enfant de manière répétée (props drilling), on
+peut utiliser le context pour stocker notre state et notre dispatch. Pour cela suffira de créer un nouveau couple
+Provider/Consumer et de passer en `value` un objet contenant `{ state, dispatch }`. Chaque consumer pourra alors
+récupérer via le consumer le state ou le dispatch selon ses besoin via le Consumer.
+
+```jsx harmony
+const { Provider, Consumer } = React.createContext({});
+
+const AppStateProvider = ({ children }) => {
+  const store = useReducer(mainReducer, initialState);
+  return (
+    <Provider value={store}>{children}</Provider>
+  );
 }
 
-// MyComp.jsx
+// In any other component bellow AppStateProvider
+const MyComp = () => (
+  <Consumer>
+    {({ state, dispatch }) => `Hello ${state.user.firstName}`}
+  </Consumer>
+)
+```
+
+L'utilisation du context via le composant `Consumer` peut vite se réveler lourde à l'utilisation en terme de syntaxe, dû
+principalement à la callback utilisée pour récupérer la valeur du context. Il existe deux méthode pour palier à cela.
+
+#### Higher Order Component
+
+Première solution, il est possible d'utiliser un pattern appelé HOC (Higher Order Component).
+Le pattern du HOC est une fonction qui prend en paramètre un composant et qui retourne un autre composant qui est son
+augmentation. Cela permet bien souvent de réutiliser du code de rendu commun. Voici donc comment écrire un HOC qui
+simplifiera l'utilisation du context :
+
+```jsx harmony
+const withState = Component => {
+  const NewComponent = props => (
+    <Consumer>
+      {({ state, dispatch }) => <Component {...props} state={state} dispatch={dispatch} />}
+    </Consumer>
+  );
+  NewComponent.displayName = `WithState(${Component.displayName || Component.name})`;
+  return NewComponent;
+} 
+```
+
+_Note : `displayName` sert uniquement à des fins de debugging dans les React Developer Tools. En effet cela permet
+d'éviter les <Unknown> ou que tous les composants qui utilisent le HOC s'appellent <NewComponent>._
+
+Les HOC s'utilisent ensuite de la manière suivante :
+
+```jsx harmony
+const CompontToWrap = ({ state, dispatch }) => `Hello ${state.user.firstName}`;
+
+export default withState(CompontToWrap);
+```
+
+#### `useContext`
+
+La deuxième solution est d'utiliser le hook `useContext` qui permet de récupérer une valeur depuis le context React.
+Il prend en paramètre l'objet *entier* retourné par la fonction `React.createContext` et retourne la valeur actuelle
+du Provider (props `value`). Rappel, c'est le Provider le plus proche en remontant l'arborescence React qui sera utilisé.
+
+On pourra don écrire un hook qui retourne ce qui nous intéresse :
+
+```jsx harmony
+const context = React.createContext({});
+
+const useAppState = () => useContext(context);
+```
+
+Et l'utiliser comme ceci :
+
+```jsx harmony
 const MyComp = () => {
-  const [{ loading, error, data }] = useXHRCall('/path/to/api', { method: 'POST' });
-  if (loading) {
-    return 'Loading...';
-  }
-  if (error) {
-    return 'Error :(';
-  }
+  const { state, dispatch } = useAppState();
+  return `Hello ${state.user.firstName}`;
+}
+```
+
+### Conclusion
+
+Nous avons maintenant la possibilité de dispatch des actions depuis n'importe où dans notre application grâce au context et
+le hook `useAppState`. Nous avons aussi le moyen de gérer entièrement tous nos appels API via le hook `useFetchWithDispatch`,
+qui permet d'influer sur l'état de notre application global selon le retour de la requête. On pourra donc écrire un composant
+qui récupère des données de cette manière :
+
+```jsx harmony
+const useFetchStudents = useFetchWithDispatch(FETCH_STUDENTS, '/students');
+
+const MyComp = () => {
+  const { state, dispatch } = useAppState();
+  useFetchStudents(dispatch);
+
   return (
     <ul>
-      {data.map(result => <li>{result}</li>)}
+      {state.students.data.map(student => <li>{student.firstName} {student.lastName}</li>)}
     </ul>
-  );
+  )
 };
+```
+
+Et dans le reducer principale de l'application :
+
+```js
+export const FETCH_STUDENTS = 'FETCH_STUDENTS';
+
+export default composeReducer({
+  students: fetchReducer(FETCH_STUDENTS),
+});
 ```
 
 ## Exercice
 
-Il temps maintenant de mettre en pratique ce que l'on a appris pour utiliser l'API du Choixpeau. Commencez par démarrer
-celle-ci avec :
+Maintenant que vous avez toute les clés en main pour gérer des comportement complexes dans l'application, le but va être de
+gérer toutes les interactions utilisateur via des actions et le reducer global de l'application. Voivi la liste des choses
+que vous aurez à faire :
 
-```bash
-yarn start:api
-```
-
-Cette API possède 3 endpoints :
-
-```
-GET /students
-GET /houses
-```
-
-Vous devrez donc dans cet exercice, utiliser les 2 endpoints GET pour récupérer les données à afficher dans
-l'application. Utilisez le hook `useXHRCall` décrit ci-dessus pour vous aider. La création/suppression d'étudiants
-devra encore se faire côté frontend uniquement. Pour ce faire, utilisez le `setState` renvoyé par `useXHRCall` pour
-modifier la liste des étudiants.
+- Ecrire le `AppStateProvider` et l'inclure à la racine de l'application pour rendre le state disponnible dans toute
+l'application.
+- Ecrire le reducer princpale de l'application qui va gérer toutes les actions de l'utilisateur.
+- Ecrire tous les action creators qui seront chargé de gérer les différentes interractions.
+- Remplacer les `useState` par `useAppState`.

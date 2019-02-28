@@ -2,12 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
 
-import houses from '../data/houses';
 import StudentsList from './StudentsList';
 
 import gryffindor from '../images/gryffindor.png';
 import slytherin from '../images/slytherin.png';
 import hufflepuff from '../images/hufflepuff.png';
+import useXHRCall from '../hooks/useXHRCall';
 
 const images = { gryffindor, slytherin, hufflepuff };
 
@@ -45,22 +45,26 @@ const HouseName = styled.p`
   font-weight: bold;
 `;
 
-const HousesList = ({ students, onDeleteStudent }) => (
-  <StyledHousesList>
-    {houses.map(house => (
-      <House key={house.id}>
-        <HousePicture className="house__picture" src={images[house.picture]} alt={house.name} />
-        <HouseName className="house__name">{house.name}</HouseName>
-        <StudentsList
-          students={students.filter(student => student.house === house.id)}
-          onDeleteStudent={onDeleteStudent}
-        />
-      </House>
-    ))}
-  </StyledHousesList>
-);
+const HousesList = ({ students, onDeleteStudent }) => {
+  const [{ data: houses }] = useXHRCall('/houses');
+  return (
+    <StyledHousesList>
+      {houses.map(house => (
+        <House key={house.id}>
+          <HousePicture className="house__picture" src={images[house.picture]} alt={house.name} />
+          <HouseName className="house__name">{house.name}</HouseName>
+          <StudentsList
+            students={students.filter(student => student.house === house.id)}
+            onDeleteStudent={onDeleteStudent}
+          />
+        </House>
+      ))}
+    </StyledHousesList>
+  );
+};
 
 HousesList.propTypes = {
+  onDeleteStudent: PropTypes.func.isRequired,
   students: PropTypes.arrayOf(PropTypes.shape({
     house: PropTypes.number.isRequired,
   })).isRequired,
