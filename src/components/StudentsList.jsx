@@ -13,19 +13,29 @@ const StyledStudentsList = styled.ul`
   border-radius: 5px;
 `;
 
-const StudentsList = ({ students }) => (
+const DeleteButton = styled.button`
+  margin-left: 5px;
+  border: none;
+  border-radius: 0;
+  background: #666;
+  color: #fff;
+`;
+
+const StudentsList = ({ students, onDeleteStudent }) => (
   <StyledStudentsList>
     {students.map(student => (
       <li key={student.id}>
         {student.lastName.toUpperCase()}
         {' '}
         {student.firstName}
+        <DeleteButton onClick={() => onDeleteStudent(student.id)}>X</DeleteButton>
       </li>
     ))}
   </StyledStudentsList>
 );
 
 StudentsList.propTypes = {
+  onDeleteStudent: PropTypes.func.isRequired,
   students: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.number.isRequired,
     lastName: PropTypes.string.isRequired,

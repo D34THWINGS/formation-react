@@ -45,13 +45,16 @@ const HouseName = styled.p`
   font-weight: bold;
 `;
 
-const HousesList = ({ students }) => (
+const HousesList = ({ students, onDeleteStudent }) => (
   <StyledHousesList>
     {houses.map(house => (
       <House key={house.id}>
         <HousePicture className="house__picture" src={images[house.picture]} alt={house.name} />
         <HouseName className="house__name">{house.name}</HouseName>
-        <StudentsList students={students.filter(student => student.house === house.id)} />
+        <StudentsList
+          students={students.filter(student => student.house === house.id)}
+          onDeleteStudent={onDeleteStudent}
+        />
       </House>
     ))}
   </StyledHousesList>

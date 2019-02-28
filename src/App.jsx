@@ -6,7 +6,7 @@ import Menu from './components/Menu';
 import HousesList from './components/HousesList';
 import studentsData from './data/students';
 import StudentForm from './components/StudentForm';
-import { ADD_STUDENT, addStudent, deleteStudent } from './actions';
+import { ADD_STUDENT, addStudent, DELETE_STUDENT, deleteStudent } from './actions';
 
 const StyledApp = styled.div`
   padding: 6rem 2rem 2rem;
@@ -37,6 +37,11 @@ const appReducer = (state, action) => {
           house: Math.round(Math.random() * 2) + 1,
         }],
       };
+    case DELETE_STUDENT:
+      return {
+        ...state,
+        students: state.students.filter(student => student.id !== action.payload.studentId),
+      };
     default:
       throw new Error(`Unhandled action: ${action.type}`);
   }
@@ -48,11 +53,11 @@ const App = () => {
     <StyledApp className="App">
       <Global styles={globalStyles} />
       <Menu />
-      <StudentForm
-        onAddStudent={student => dispatch(addStudent(student))}
+      <StudentForm onAddStudent={student => dispatch(addStudent(student))} />
+      <HousesList
+        students={students}
         onDeleteStudent={studentId => dispatch(deleteStudent(studentId))}
       />
-      <HousesList students={students} />
     </StyledApp>
   );
 };
