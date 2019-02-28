@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import styled from '@emotion/styled';
+import { deleteStudent } from '../actions';
+import { StateConsumer, withState } from './StateProvider';
 
 const StyledStudentsList = styled.ul`
   width: 100%;
@@ -21,21 +23,20 @@ const DeleteButton = styled.button`
   color: #fff;
 `;
 
-const StudentsList = ({ students, onDeleteStudent }) => (
+const StudentsList = ({ students, dispatch }) => (
   <StyledStudentsList>
     {students.map(student => (
       <li key={student.id}>
         {student.lastName.toUpperCase()}
         {' '}
         {student.firstName}
-        <DeleteButton onClick={() => onDeleteStudent(student.id)}>X</DeleteButton>
+        <DeleteButton onClick={() => deleteStudent(student.id, dispatch)}>X</DeleteButton>
       </li>
     ))}
   </StyledStudentsList>
 );
 
 StudentsList.propTypes = {
-  onDeleteStudent: PropTypes.func.isRequired,
   students: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.number.isRequired,
     lastName: PropTypes.string.isRequired,
@@ -43,4 +44,4 @@ StudentsList.propTypes = {
   })).isRequired,
 };
 
-export default StudentsList;
+export default withState(StudentsList);

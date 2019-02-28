@@ -4,9 +4,11 @@ import { css, Global } from '@emotion/core';
 
 import Menu from './components/Menu';
 import HousesList from './components/HousesList';
-import studentsData from './data/students';
 import StudentForm from './components/StudentForm';
-import { ADD_STUDENT, addStudent, DELETE_STUDENT, deleteStudent } from './actions';
+import { addStudent, FETCH_STUDENTS } from './actions';
+import { StateProvider } from './components/StateProvider';
+import { useXHRCall } from './hooks/useXHRCall';
+import { appReducer } from './reducer';
 
 const StyledApp = styled.div`
   padding: 6rem 2rem 2rem;
@@ -24,41 +26,20 @@ const globalStyles = css`
   }
 `;
 
-const initialState = { students: studentsData };
-
-const appReducer = (state, action) => {
-  switch (action.type) {
-    case ADD_STUDENT:
-      return {
-        ...state,
-        students: [...state.students, {
-          ...action.payload,
-          id: state.students.length + 1,
-          house: Math.round(Math.random() * 2) + 1,
-        }],
-      };
-    case DELETE_STUDENT:
-      return {
-        ...state,
-        students: state.students.filter(student => student.id !== action.payload.studentId),
-      };
-    default:
-      throw new Error(`Unhandled action: ${action.type}`);
-  }
-};
+const initialState = { students: { data: [] }, houses: { data: [] } };
 
 const App = () => {
-  const [{ students }, dispatch] = useReducer(appReducer, initialState);
+  const [state, dispatch] = useReducer(appReducer, initialState);
+  useXHRCall('http://localhost:5000/students', {}, dispatch, FETCH_STUDENTS);
   return (
-    <StyledApp className="App">
-      <Global styles={globalStyles} />
-      <Menu />
-      <StudentForm onAddStudent={student => dispatch(addStudent(student))} />
-      <HousesList
-        students={students}
-        onDeleteStudent={studentId => dispatch(deleteStudent(studentId))}
-      />
-    </StyledApp>
+    <StateProvider value={{ state, dispatch }}>
+      <StyledApp className="App">
+        <Global styles={globalStyles} />
+        <Menu />
+        <StudentForm onAddStudent={student => addStudent(student, dispatch)} />
+        <HousesList students={state.students.data} />
+      </StyledApp>
+    </StateProvider>
   );
 };
 
