@@ -1,0 +1,67 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@0.0.2
+
+jobs:
+  install:
+    executor:
+      name: node/node
+      tag: '10'
+    working_directory: ~/app
+    steps:
+      - checkout
+      - node/with-cache:
+          steps:
+            - run: yarn install --frozen-lockfile
+          cache-key: yarn.lock
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - app
+
+  test:
+    executor:
+      name: node/node
+      tag: '10'
+    working_directory: ~/app
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run: yarn lint
+      - run: yarn test
+
+  deploy:
+    docker:
+      - image: buildpack-deps:trusty
+    working_directory: ~/app
+    steps:
+      - attach_workspace:
+          at: ~/
+      - deploy:
+          command: git push -f https://heroku:$HEROKU_API_KEY@git.heroku.com/formation-js-d34thwings.git master
+
+workflows:
+  version: 2
+  pr_workflow:
+    jobs:
+      - install:
+          filters:
+            branches:
+              ignore: master
+      - test:
+          requires:
+            - install
+
+  master_workflow:
+    jobs:
+      - install:
+          filters:
+            branches:
+              only: master
+      - test:
+          requires:
+            - install
+      - deploy:
+          requires:
+            - test
