@@ -7,9 +7,9 @@ appelé les Hooks.
 ## Hooks
 
 Ils se présentent sous forme de fonctions qui se câblent directement à React. Cette approche rend le code plus facile
-à lire, plus simple à tester et permet de séparer de l'orienter Objet qui est presque totalement inutile en JavaScript.
+à lire, plus simple à tester et permet de séparer de l'orienté Objet qui est presque totalement inutile en JavaScript.
 
-Les hooks sont composable entre eux et permettent d'atteindre des comportements complexes en quelques lignes de code
+Les hooks sont composables entre eux et permettent d'atteindre des comportements complexes en quelques lignes de code
 seulement.
 
 ### `useState`
@@ -68,7 +68,7 @@ A chaque fois que l'on appelle dispatch avec une action, celle-ci passe à trave
 state. Si rien n'a changé, React ne fera pas de nouveau rendu.
 
 Il est fortement recommandé de stocker les types d'actions dans des constantes que vous réutiliserez dans toute votre
-application. Le mieux étant de créer un fichier contenant les actions. Il est aussi recommander d'utiliser des factory
+application. Le mieux étant de créer un fichier contenant les actions. Il est aussi recommandé d'utiliser des factory
 pour vos actions (appelées action creators), pour uniformiser la manière dont vous créez les actions. Une autre bonne
 pratique est de stocker le type de l'action dans `type` et les données de l'action dans `payload`. Cela donne un fichier
 d'actions comme suis :
@@ -110,5 +110,5 @@ const Counter = () => {
 ## Exercice
 
 Il est temps maintenant de remplacer toutes les composants classes ES6 dans notre application par des composants
-fonctionnels utilisant les hooks. Ajoutez en même temps la possibilité de supprimer des étudiants d'une maison, cela
+fonctionnels utilisant les hooks. Ajoutez, en même temps, la possibilité de supprimer des étudiants d'une maison, cela
 permettra d'utiliser `useReducer` dans le composant `App` en lui faisant gérer deux actions : ajout et suppression.
